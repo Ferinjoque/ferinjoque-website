@@ -406,17 +406,17 @@ nav {
 }
 
 .glitch::before {
-    left: 2px;
+    left: 1px;
     text-shadow: -1px 0 var(--color-primary);
-    clip: rect(44px, 450px, 56px, 0);
-    animation: glitch-anim-1 5s infinite linear alternate-reverse;
+    clip: rect(44px, 450px, 54px, 0);
+    animation: glitch-anim-1 10s infinite linear alternate-reverse;
 }
 
 .glitch::after {
-    left: -2px;
+    left: -1px;
     text-shadow: 1px 0 var(--color-accent);
-    clip: rect(44px, 450px, 56px, 0);
-    animation: glitch-anim-2 5s infinite linear alternate-reverse;
+    clip: rect(44px, 450px, 54px, 0);
+    animation: glitch-anim-2 10s infinite linear alternate-reverse;
 }
 
 @keyframes glitch-anim-1 {
