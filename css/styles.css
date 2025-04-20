@@ -1159,3 +1159,29 @@ footer {
 .delay-3 {
     animation-delay: 0.6s;
 }
+
+.icon-button {
+  display: flex;                  /* flex to center child */
+  align-items: center;
+  justify-content: center;
+
+  width: 2.5rem;                  /* same as your .theme-toggle */
+  height: 2.5rem;
+  border-radius: 50%;
+
+  background-color: var(--color-bg-alt); /* or any bg you prefer */
+  color: var(--color-text);              /* icon color */
+
+  transition: background-color var(--transition), transform var(--transition);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background-color: var(--color-bg); /* subtle brighten on hover */
+  transform: translateY(-2px);       /* gentle lift on hover */
+}
+
+.icon-button .material-icons {
+  font-size: 1.25rem;              /* match your theme-icon size */
+  line-height: 1;                  /* remove extra vertical spacing */
+}
