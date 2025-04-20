@@ -1172,3 +1172,7 @@ footer {
   font-size: 1.25rem;              /* match your theme-icon size */
   line-height: 1;                  /* remove extra vertical spacing */
 }
+
+.theme-toggle {
+  margin-left: 2rem;
+}
