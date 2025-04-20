@@ -1177,16 +1177,35 @@ footer {
   margin-left: 2rem;
 }
 
+.debug-container {
+  position: relative;       /* so the message can be positioned against it */
+  display: inline-block;    /* shrink‑wrap to the bubble size */
+}
+
 .debug-message {
-  text-align: center;
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  margin: 0.5rem 0 1rem;
-  opacity: 0.7;
+  display: none;            /* hidden by default */
+  position: absolute;
+  bottom: 100%;             /* sit just above the bubble */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 200;             /* above everything else */
+  pointer-events: none;     /* so it doesn’t block the hover */
+}
+
+.debug-container:hover .debug-message {
+  display: block;           /* reveal when you hover the bubble */
   animation: pulse 2s infinite ease-in-out;
 }
 
+/* you can reuse the pulse you already have, or redefine it */
 @keyframes pulse {
-  0%,100% { opacity: 0.5; }
-  50%     { opacity: 0.9; }
+  0%,100% { opacity: 0.6; }
+  50%     { opacity: 1;   }
 }
+
