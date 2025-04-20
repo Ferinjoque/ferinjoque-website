@@ -1,6 +1,6 @@
 {
   "name": "vite-react-typescript-starter",
-  + "homepage": "https://Ferinjoque.github.io/ferinjoque-website",
+  "homepage": "https://Ferinjoque.github.io/ferinjoque-website",
   "private": true,
   "version": "0.0.0",
   "type": "module",
