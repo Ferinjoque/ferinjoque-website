@@ -95,33 +95,61 @@ function animateOnScroll() {
     });
 }
 
-// Form submission handling
 if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = new FormData(contactForm);
-        const formObject = Object.fromEntries(formData);
-        
-        // Simple form validation
-        if (!formObject.name || !formObject.email || !formObject.message) {
-            showFormMessage('Please fill in all fields', 'error');
-            return;
-        }
-        
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formObject.email)) {
-            showFormMessage('Please enter a valid email address', 'error');
-            return;
-        }
-        
-        // Simulating form submission success
-        // In a real application, you would send this data to a server
-        showFormMessage('Message sent successfully! I\'ll get back to you soon.', 'success');
-        contactForm.reset();
+  contactForm.addEventListener('submit', e => {
+    e.preventDefault();
+
+    // collect & validate
+    const data = Object.fromEntries(new FormData(contactForm));
+    if (!data.name || !data.email || !data.message) {
+      showFormMessage('Please fill in all fields', 'error');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      showFormMessage('Please enter a valid email address', 'error');
+      return;
+    }
+
+    // run recaptcha v3
+    grecaptcha.ready(() => {
+      grecaptcha.execute('6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v', { action: 'contact' })
+        .then(token => {
+          // append the recaptcha response
+          const formData = new FormData(contactForm);
+          formData.append('g-recaptcha-response', token);
+
+          // post to Formspree
+          fetch('https://formspree.io/f/xblgnwdw', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData
+          })
+          .then(res => res.json())
+          .then(json => {
+            if (json.ok) {
+              showFormMessage(
+                'Message sent! I’ll get back to you soon.',
+                'success'
+              );
+              contactForm.reset();
+            } else {
+              // Formspree returns errors in json.errors
+              const msg = json.errors
+                ? json.errors.map(e => e.message).join(', ')
+                : 'Oops! Something went wrong.';
+              showFormMessage(msg, 'error');
+            }
+          })
+          .catch(() => {
+            showFormMessage(
+              'Network error. Please try again later.',
+              'error'
+            );
+          });
+        });
     });
+  });
 }
 
 // Function to display form submission messages
