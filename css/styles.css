@@ -933,22 +933,39 @@ footer {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 3rem;
+    gap: 2rem;
 }
 
 .footer-logo {
     font-size: 1.5rem;
     font-weight: 700;
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+}
+
+.footer-links {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
 }
 
 .footer-links ul {
     display: flex;
     list-style: none;
     gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0;
+    margin: 0;
 }
 
 .footer-social {
+    flex: 1;
+    min-width: 200px;
     display: flex;
     gap: 1rem;
+    justify-content: center;
 }
 
 .footer-social a {
@@ -1176,39 +1193,3 @@ footer {
 .theme-toggle {
   margin-left: 2rem;
 }
-
-.debug-container {
-  position: relative;      /* establish a positioning context */
-  display: inline-block;   /* shrink‑wrap to the bubble */
-  margin-right: 1rem;      /* keep your gap between bubbles */
-}
-
-.debug-message {
-  display: none;           /* start hidden */
-  position: absolute;
-  bottom: 100%;            /* sit just above the bubble */
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 0.5rem;   /* little gap */
-  
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  pointer-events: none;    /* so you don’t accidentally hover the tooltip itself */
-  z-index: 10;
-}
-
-.debug-container:hover .debug-message {
-  display: block;          /* reveal on hover */
-  animation: pulse 2s infinite ease-in-out;
-}
-
-/* (If you already have a @keyframes pulse, you can reuse it) */
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 1;   }
-}
-
