@@ -1,6 +1,6 @@
 // functions/track/index.ts
-import { serve } from 'https://deno.land/x/sift@0.5.0/mod.ts';
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { serve } from "sift";
+import { createClient } from "supabase";
 
 // ✳️ Read ENV at load time
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
