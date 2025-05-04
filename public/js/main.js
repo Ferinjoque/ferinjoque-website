@@ -1,9 +1,12 @@
+import { trackEvent } from './tracker.js';
+
 // DOM Elements
 const header = document.querySelector('header');
 const menuToggle = document.querySelector('.menu-toggle');
 const navLinks = document.querySelector('.nav-links');
 const themeToggle = document.querySelector('.theme-toggle');
 const sections = document.querySelectorAll('section');
+const navSections  = document.querySelectorAll('section[id]');
 const contactForm = document.getElementById('contactForm');
 
 // Scroll handler for header effects
@@ -394,6 +397,53 @@ function createSustainableLoader() {
         }, 1500); // Show loader for at least 1.5 seconds for effect
     });
 }
+
+// 1) Page view on load
+window.addEventListener('load', () => {
+    trackEvent('page_view', {
+        url: location.href,
+        title: document.title,
+        timestamp: Date.now(),
+    });
+});
+
+// 2) Track section impressions via IntersectionObserver
+const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            trackEvent('section_view', {
+                section: entry.target.id,
+                timestamp: Date.now(),
+            });
+            io.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.5 });
+
+navSections.forEach(sec => io.observe(sec));
+
+// 3) Track clicks on all links & buttons
+document.addEventListener('click', e => {
+    const el = e.target.closest('a, button');
+    if (!el) return;
+    trackEvent('click', {
+        tag: el.tagName.toLowerCase(),
+        text: el.innerText.trim().slice(0,50),
+        href: el.href || null,
+        timestamp: Date.now(),
+    });
+});
+
+// 4) Track hovers on any element with data-track-hover attribute
+document.querySelectorAll('[data-track-hover]').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+        trackEvent('hover', {
+            element: el.dataset.trackHover,
+            timestamp: Date.now(),
+        });
+    });
+});
+
 
 // Initialize the sustainable loader
 createSustainableLoader();
