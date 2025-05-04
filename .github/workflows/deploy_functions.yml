@@ -25,4 +25,4 @@ jobs:
 
       - name: Deploy Edge Functions
         # Use the environment variable directly for the project ref
-        run: supabase functions deploy --project-ref $SUPABASE_PROJECT_REF # <-- Simplified this line
+        run: supabase functions deploy --project-ref $SUPABASE_PROJECT_REF --import-map supabase/import_map.json
