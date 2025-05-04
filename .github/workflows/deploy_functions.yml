@@ -1,0 +1,31 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches:
+      - main # Trigger deployment only on pushes to the 'main' branch
+  workflow_dispatch: # Allows manual triggering from GitHub Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Use the secret you created in GitHub secrets
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest # Use the latest CLI version
+
+      - name: Deploy Edge Functions
+        # This command deploys all functions found in supabase/functions
+        # It respects settings in config.toml (like verify_jwt = false)
+        run: supabase functions deploy --project-ref $(grep -oP 'project_id = "\\K[^"]+' supabase/config.toml || echo $PROJECT_ID) # Extracts project_id from config.toml, provide fallback if needed
+        # If your project_id isn't in config.toml, you might need to add it as another secret
+        # env:
+        #   SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }} # Add this secret if needed
+        # run: supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
