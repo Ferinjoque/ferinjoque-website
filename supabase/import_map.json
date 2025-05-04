@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "std/": "https://deno.land/std@0.224.0/", // Or a recent stable version
+    "sift": "https://deno.land/x/sift@0.5.0/mod.ts",
+    "supabase": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+  }
+}
