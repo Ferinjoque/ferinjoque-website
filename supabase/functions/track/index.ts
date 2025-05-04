@@ -2,21 +2,19 @@
 import { serve } from 'https://deno.land/x/sift@0.5.0/mod.ts';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// 1️⃣ Read from the Function’s ENV (set these under "Settings → Edge Function → Secrets")
-const SUPABASE_URL  = Deno.env.get('SUPABASE_URL');
-const SUPABASE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+// ✳️ Read ENV at load time
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+// 1️⃣ If either is missing, crash immediately (no top-level `return`)
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('⚠️ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-  return new Response(JSON.stringify({ error: 'Configuration error.' }), {
-    status: 500,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  throw new Error('Missing required SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
 }
 
-// 2️⃣ Init your Supabase client with service-role privileges
+// 2️⃣ Init Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 3️⃣ Define a strict CORS whitelist (YOUR Pages URL here!)
+// 3️⃣ Whitelist your GitHub Pages origin
 const ALLOWED_ORIGINS = new Set([
   'https://ferinjoque.github.io',
   'https://injoque.dev'
@@ -25,12 +23,12 @@ const ALLOWED_ORIGINS = new Set([
 serve(async (req) => {
   const origin = req.headers.get('origin') || '';
 
-  // 4️⃣ Pre-flight handling
+  // — OPTIONS preflight —
   if (req.method === 'OPTIONS') {
     if (!ALLOWED_ORIGINS.has(origin)) {
       return new Response('Forbidden', { status: 403 });
     }
-    return new Response('ok', {
+    return new Response(null, {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': origin,
@@ -41,7 +39,7 @@ serve(async (req) => {
     });
   }
 
-  // 5️⃣ All other routes must be POST
+  // — Only POST allowed from here —
   if (req.method !== 'POST') {
     return new Response('Method Not Allowed', {
       status: 405,
@@ -49,22 +47,22 @@ serve(async (req) => {
     });
   }
 
-  // 6️⃣ Enforce CORS on the actual POST too
+  // — CORS on actual POST —
   if (!ALLOWED_ORIGINS.has(origin)) {
     return new Response('Forbidden', { status: 403 });
   }
   const corsHeaders = { 'Access-Control-Allow-Origin': origin };
 
-  // 7️⃣ Parse JSON
-  let payload: { event_type?: string, event_data?: any };
+  // — Parse JSON body —
+  let payload: any;
   try {
     payload = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
       status: 400,
-      headers: {
+      headers: { 
         ...corsHeaders,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json' 
       }
     });
   }
@@ -80,7 +78,7 @@ serve(async (req) => {
     });
   }
 
-  // 8️⃣ Capture IP, UA, session
+  // — Capture IP / UA / session —
   const ip = req.headers.get('x-forwarded-for')
           || req.headers.get('x-real-ip')
           || (req.conn?.remoteAddr as any)?.hostname
@@ -88,7 +86,7 @@ serve(async (req) => {
   const ua        = req.headers.get('user-agent') || 'unknown';
   const sessionId = req.headers.get('x-session-id')    || 'none';
 
-  // 9️⃣ Insert into your `events` table
+  // — Insert into Supabase—
   const { error: dbError } = await supabase
     .from('events')
     .insert({
@@ -110,7 +108,7 @@ serve(async (req) => {
     });
   }
 
-  // 🔟 All good!
+  // — Done! —
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
     headers: {
