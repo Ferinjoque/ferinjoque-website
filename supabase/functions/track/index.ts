@@ -1,71 +1,137 @@
-// supabase/functions/track/index.ts - TEMPORARY TEST CODE
-// Note: No external imports needed for this basic test
+// supabase/functions/track/index.ts - RESTORED + DEBUG LOGS
+console.log("DEBUG: index.ts starting..."); // Log start
 
-const ALLOWED_ORIGIN_1 = 'https://ferinjoque.github.io';
-const ALLOWED_ORIGIN_2 = 'https://injoque.dev';
+import { serve } from "sift";
+import { createClient } from "supabase";
 
-console.log("Basic test function starting..."); // Log start
+console.log("DEBUG: Imports successful."); // Log after imports
 
-Deno.serve(async (req: Request) => {
-  const url = new URL(req.url);
-  const origin = req.headers.get("origin") || "";
-  console.log(`Received: ${req.method} ${url.pathname} from origin: ${origin}`); // Log request
+// ✳️ Read ENV at load time
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  // --- CORS Preflight Handling ---
-  if (req.method === "OPTIONS") {
-    console.log("Handling OPTIONS request.");
-    // Check if origin is allowed
-    const isAllowed = origin === ALLOWED_ORIGIN_1 || origin === ALLOWED_ORIGIN_2;
-    if (isAllowed) {
-      console.log("Origin allowed. Sending 204 with CORS headers.");
-      return new Response(null, { // Use 204 No Content
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": origin,
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, x-session-id", // Match your actual request headers
-          "Access-Control-Max-Age": "86400",
-        },
-      });
-    } else {
-      console.log("Origin NOT allowed.");
-      return new Response("Forbidden", { status: 403 });
+// 1️⃣ If either is missing, crash immediately
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("FATAL ERROR: Missing Supabase ENV Vars!"); // Log fatal error
+  throw new Error('Missing required SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+}
+console.log("DEBUG: ENV vars loaded."); // Log ENV var success
+
+// 2️⃣ Init Supabase client
+let supabase;
+try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("DEBUG: Supabase client initialized."); // Log client init success
+} catch (e) {
+    console.error("FATAL ERROR: Failed to initialize Supabase client:", e); // Log client init failure
+    throw e; // Re-throw to halt execution
+}
+
+
+// 3️⃣ Whitelist your GitHub Pages origin
+const ALLOWED_ORIGINS = new Set([
+  'https://ferinjoque.github.io',
+  'https://injoque.dev'
+]);
+
+console.log("DEBUG: Starting server..."); // Log before serve
+
+serve(async (req) => {
+  console.log(`DEBUG: Request received: ${req.method} ${req.url}`); // Log each request
+  const origin = req.headers.get('origin') || '';
+
+  // --- OPTIONS preflight ---
+  if (req.method === 'OPTIONS') {
+    console.log(`DEBUG: Handling OPTIONS from origin: ${origin}`);
+    if (!ALLOWED_ORIGINS.has(origin)) {
+      console.log("DEBUG: OPTIONS origin forbidden.");
+      return new Response('Forbidden', { status: 403 });
     }
+    console.log("DEBUG: OPTIONS preflight allowed. Sending 204.");
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, x-session-id',
+        'Access-Control-Max-Age': '86400'
+      }
+    });
   }
 
-  // --- Handle POST (Basic Response) ---
-  if (req.method === "POST") {
-     console.log("Handling POST request.");
-     // Check if origin is allowed for POST too
-     const isAllowed = origin === ALLOWED_ORIGIN_1 || origin === ALLOWED_ORIGIN_2;
-     if (!isAllowed) {
-         console.log("Origin NOT allowed for POST.");
-         return new Response("Forbidden", { status: 403 });
-     }
-
-     try {
-        const body = await req.json();
-        console.log("Received POST body:", body);
-        // In a real scenario, you'd process the body here
-     } catch (e) {
-         console.error("Error reading POST body:", e);
-         // Ignore body reading errors for this basic test
-     }
-
-     console.log("Sending basic POST success response with CORS header.");
-     return new Response(JSON.stringify({ success: true, message: "Basic test received POST" }), {
-       status: 200,
-       headers: {
-         "Access-Control-Allow-Origin": origin, // Still need this for the actual response
-         "Content-Type": "application/json",
-       },
-     });
+  // --- Only POST allowed from here ---
+  if (req.method !== 'POST') {
+    console.log(`DEBUG: Method ${req.method} not allowed. Sending 405.`);
+    return new Response('Method Not Allowed', {
+      status: 405,
+      headers: { 'Allow': 'POST, OPTIONS' }
+    });
   }
 
-  // --- Default Response (Method Not Allowed / Not Found) ---
-  console.log(`Method ${req.method} not handled. Returning 405.`);
-  return new Response("Method Not Allowed", {
-    status: 405,
-    headers: { "Allow": "POST, OPTIONS" }, // Let browser know what's allowed
+  // --- CORS on actual POST ---
+  console.log(`DEBUG: Handling POST from origin: ${origin}`);
+  if (!ALLOWED_ORIGINS.has(origin)) {
+    console.log("DEBUG: POST origin forbidden.");
+    return new Response('Forbidden', { status: 403 });
+  }
+  const corsHeaders = { 'Access-Control-Allow-Origin': origin };
+  console.log("DEBUG: POST origin allowed.");
+
+  // --- Parse JSON body ---
+  let payload: any;
+  try {
+    payload = await req.json();
+    console.log("DEBUG: POST body parsed:", payload);
+  } catch (e) {
+    console.error("ERROR: Failed to parse POST JSON body:", e);
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  const { event_type, event_data } = payload;
+  if (!event_type) {
+    console.error("ERROR: Missing event_type in POST body.");
+    return new Response(JSON.stringify({ error: 'Missing event_type' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+  console.log(`DEBUG: Processing event_type: ${event_type}`);
+
+  // --- Capture IP / UA / session ---
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || (req.conn?.remoteAddr as any)?.hostname || 'unknown';
+  const ua = req.headers.get('user-agent') || 'unknown';
+  const sessionId = req.headers.get('x-session-id') || 'none';
+  console.log(`DEBUG: Captured ip: ${ip}, ua: ${ua.substring(0, 20)}..., session: ${sessionId}`);
+
+  // --- Insert into Supabase---
+  console.log("DEBUG: Attempting Supabase insert...");
+  const { error: dbError } = await supabase
+    .from('events') // Ensure 'events' table exists and function has INSERT permission
+    .insert({
+      ip_address: ip,
+      user_agent: ua,
+      session_id: sessionId,
+      event_type,
+      event_data
+    });
+
+  if (dbError) {
+    console.error('ERROR: Supabase insert error:', dbError); // Log the actual DB error
+    return new Response(JSON.stringify({ error: "Database insert failed", details: dbError.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+  console.log("DEBUG: Supabase insert successful.");
+
+  // --- Done! ---
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
-});
+}); // End of serve handler
+
+console.log("DEBUG: Function server setup complete."); // Log after calling serve
