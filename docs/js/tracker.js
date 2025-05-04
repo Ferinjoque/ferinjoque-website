@@ -1,5 +1,4 @@
-import { SUPABASE_URL } from './config.js';
-const TRACK_URL = `${SUPABASE_URL}/functions/v1/track`;
+const TRACK_URL = `https://sueybbrfwiqviollreiu.functions.supabase.co/functions/v1/track`;
 
 let sessionId = sessionStorage.getItem('sessionId');
 if (!sessionId) {
