@@ -9,6 +9,18 @@ const sections = document.querySelectorAll('section');
 const navSections  = document.querySelectorAll('section[id]');
 const contactForm = document.getElementById('contactForm');
 
+// Helper function to parse UTM parameters from URL
+function getUtmParams() {
+    const params = new URLSearchParams(location.search);
+    return {
+        utm_source: params.get('utm_source'),
+        utm_medium: params.get('utm_medium'),
+        utm_campaign: params.get('utm_campaign'),
+        utm_term: params.get('utm_term'),
+        utm_content: params.get('utm_content'),
+    };
+}
+
 // Scroll handler for header effects
 window.addEventListener('scroll', () => {
     // Add scrolled class to header when scrolled down
@@ -400,11 +412,34 @@ function createSustainableLoader() {
 
 // 1) Page view on load
 window.addEventListener('load', () => {
-    trackEvent('page_view', {
+    const utmData = getUtmParams(); // Get UTM data
+    const pageViewData = {
+        // Original data
         url: location.href,
         title: document.title,
         timestamp: Date.now(),
-    });
+
+        // --- NEW DATA POINTS ---
+        referrer: document.referrer || null, // Use null if no referrer
+        screen_width: screen.width,
+        screen_height: screen.height,
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        browser_language: navigator.language,
+        browser_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        pathname: location.pathname,
+
+        // UTM parameters (will be null if not present in URL)
+        utm_source: utmData.utm_source,
+        utm_medium: utmData.utm_medium,
+        utm_campaign: utmData.utm_campaign,
+        utm_term: utmData.utm_term,
+        utm_content: utmData.utm_content,
+        // --- END NEW DATA POINTS ---
+    };
+
+    console.log("DEBUG: Tracking page_view with data:", pageViewData); // Optional: Log data being sent
+    trackEvent('page_view', pageViewData);
 });
 
 // 2) Track section impressions via IntersectionObserver
