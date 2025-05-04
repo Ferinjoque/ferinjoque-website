@@ -92,7 +92,7 @@ serve(async (req: Request) => {
                 if (geo?.country) acc[geo.country] = (acc[geo.country] || 0) + 1;
                 return acc;
              }, {});
-             topCountries = Object.entries(countryCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+             topCountries = Object.entries(countryCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 5);
         } else {
             console.log("DEBUG: Skipping GeoIP lookup (no IPINFO_API_KEY set).");
         }
@@ -130,21 +130,21 @@ serve(async (req: Request) => {
             }
             return acc;
         }, {});
-        const topReferrers = Object.entries(referrerCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+        const topReferrers = Object.entries(referrerCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 5);
 
         // Top Pages (Pathnames)
         const pathCounts = events.filter(e => e.event_type === 'page_view' && e.pathname).reduce((acc, e) => {
             acc[e.pathname] = (acc[e.pathname] || 0) + 1;
             return acc;
         }, {});
-        const topPaths = Object.entries(pathCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+        const topPaths = Object.entries(pathCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 5);
 
         // Top UTM Sources (from first page view)
          const utmSourceCounts = firstPageViews.filter(e => e.utm_source).reduce((acc, e) => {
              acc[e.utm_source] = (acc[e.utm_source] || 0) + 1;
              return acc;
          }, {});
-         const topUtmSources = Object.entries(utmSourceCounts).sort(([, a], [, b]) => b - a).slice(0, 3);
+         const topUtmSources = Object.entries(utmSourceCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 3);
 
         // Screen Width Groups
         const screenWidthGroups = events.filter(e => e.screen_width).reduce((acc, e) => {
@@ -155,7 +155,7 @@ serve(async (req: Request) => {
              acc[group] = (acc[group] || 0) + 1;
              return acc;
          }, {});
-         const screenDistribution = Object.entries(screenWidthGroups).sort(([, a], [, b]) => b - a);
+         const screenDistribution = Object.entries(screenWidthGroups).sort(([, a], [, b]) => Number(b) - Number(a));
 
 
         // --- Format summary text for OpenAI ---
