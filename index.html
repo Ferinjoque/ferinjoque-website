@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fernando Injoque - Software Engineer (2027)</title>
+    <title>Fernando Injoque - AI and Automation Developer & Consultant in Sustainable Finance</title>
     <meta name="description" content="Fernando Injoque - AI and Automation Developer &amp; Consultant in Sustainable Finance">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32"       href="/favicon-32x32.png">
@@ -18,18 +18,18 @@
         <div class="container">
             <nav>
                 <div class="logo">
-                    <a href="#" class="glitch" data-text="FI">FI</a>
+                    <a href="#" class="glitch" data-text="FI" data-track-hover="Logo">FI</a>
                 </div>
                 <ul class="nav-links">
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#projects">Projects</a></li>
-                    <li><a href="#experience">Experience</a></li>
-                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="#about" data-track-hover="NavLinkAbout">About</a></li>
+                    <li><a href="#projects" data-track-hover="NavLinkProjects">Projects</a></li>
+                    <li><a href="#experience" data-track-hover="NavLinkExperience">Experience</a></li>
+                    <li><a href="#contact" data-track-hover="NavLinkContact">Contact</a></li>
                 </ul>
-                <div class="theme-toggle icon-button">
+                <div class="theme-toggle icon-button" data-track-hover="ThemeToggle">
                     <span class="material-icons theme-icon">eco</span>
                 </div>
-                <div class="menu-toggle">
+                <div class="menu-toggle" data-track-hover="MenuToggle">
                     <div class="bar"></div>
                     <div class="bar"></div>
                     <div class="bar"></div>
@@ -46,8 +46,8 @@
                     <h2>AI Developer <span class="accent">×</span> Sustainability Consultant</h2>
                     <p class="hero-description">Engineering automation solutions for a nature-positive economy</p>
                     <div class="cta-container">
-                        <a href="#contact" class="cta-button">Get in touch</a>
-                        <a href="#projects" class="cta-button cta-secondary">View projects</a>
+                        <a href="#contact" class="cta-button" data-track-hover="CTA_GetInTouch">Get in touch</a>
+                        <a href="#projects" class="cta-button cta-secondary" data-track-hover="CTA_ViewProjects">View projects</a>
                     </div>
                 </div>
                 <div class="scroll-indicator">
@@ -136,7 +136,7 @@
                     <div class="section-line"></div>
                 </div>
                 <div class="projects-grid">
-                    <div class="project-card">
+                    <div class="project-card" data-track-hover="ProjectCard_LBNB">
                         <div class="project-image">
                             <img src="/assets/lbnb.jpg" alt="The Little Book of Nature Business">
                             <div class="project-overlay">
@@ -155,7 +155,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="project-card">
+                    <div class="project-card" data-track-hover="ProjectCard_Seabridge">
                         <div class="project-image">
                             <img src="/assets/seabridge.jpg" alt="SeaBridge Sustainability">
                             <div class="project-overlay">
@@ -175,7 +175,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="project-card">
+                    <div class="project-card" data-track-hover="ProjectCard_UTP">
                         <div class="project-image">
                             <img src="/assets/utp.jpg" alt="Universidad Tecnológica del Perú">
                             <div class="project-overlay">
@@ -239,7 +239,7 @@
                     </div>
                     <div class="contact-methods">
                         <div class="contact-info">
-                            <div class="contact-item">
+                            <div class="contact-item" data-track-hover="ContactItem_Email">
                                 <div class="contact-icon">
                                     <span class="material-icons">email</span>
                                 </div>
@@ -248,9 +248,9 @@
                                     <a href="mailto:support@injoque.dev">support@injoque.dev</a>
                                 </div>
                             </div>
-                            <div class="contact-item">
+                            <div class="contact-item" data-track-hover="ContactItem_LinkedIn">
                                 <div class="contact-icon">
-                                    <span class="material-icons">work</span>
+                                    <span class="material-icons">link</span>
                                 </div>
                                 <div class="contact-detail">
                                     <h3>LinkedIn</h3>
@@ -261,7 +261,7 @@
                                 <div class="contact-icon">
                                     <span class="material-icons">code</span>
                                 </div>
-                                <div class="contact-detail">
+                                <div class="contact-detail" data-track-hover="ContactItem_GitHub">
                                     <h3>GitHub</h3>
                                     <a href="https://github.com/Ferinjoque" target="_blank">github.com/Ferinjoque</a>
                                 </div>
@@ -271,17 +271,17 @@
                             <form id="contactForm">
                                 <div class="form-group">
                                     <label for="name">Name</label>
-                                    <input type="text" id="name" name="name" required>
+                                    <input type="text" data-track-hover="FormInput_Name" id="name" name="name" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="email">Email</label>
-                                    <input type="email" id="email" name="email" required>
+                                    <input type="email" data-track-hover="FormInput_Email" id="email" name="email" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="message">Message</label>
-                                    <textarea id="message" name="message" rows="5" required></textarea>
+                                    <textarea id="message" data-track-hover="FormInput_Message" name="message" rows="5" required></textarea>
                                 </div>
-                                <button type="submit" class="cta-button">Send Message</button>
+                                <button type="submit" class="cta-button" data-track-hover="Button_SendMessage">Send Message</button>
                             </form>
                         </div>
                     </div>
@@ -298,20 +298,20 @@
                 </div>
                 <div class="footer-links">
                     <ul>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="#projects">Projects</a></li>
-                        <li><a href="#experience">Experience</a></li>
-                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#about" data-track-hover="FooterLinkAbout">About</a></li>
+                        <li><a href="#projects" data-track-hover="FooterLinkProjects">Projects</a></li>
+                        <li><a href="#experience" data-track-hover="FooterLinkExperience">Experience</a></li>
+                        <li><a href="#contact" data-track-hover="FooterLinkContact">Contact</a></li>
                     </ul>
                 </div>
                 <div class="footer-social">
-                    <a href="https://www.linkedin.com/in/ferinjoque/" target="_blank">
+                    <a href="https://www.linkedin.com/in/ferinjoque/" data-track-hover="Social_LinkedIn" target="_blank">
                         <span class="material-icons">work</span>
                     </a>
-                    <a href="https://github.com/Ferinjoque" target="_blank">
+                    <a href="https://github.com/Ferinjoque" data-track-hover="Social_Github" target="_blank">
                         <span class="material-icons">code</span>
                     </a>
-                    <a href="mailto:support@injoque.dev">
+                    <a href="mailto:support@injoque.dev" data-track-hover="Social_Mail">
                         <span class="material-icons">email</span>
                     </a>
                 </div>
@@ -325,6 +325,8 @@
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
     <script src="https://www.google.com/recaptcha/api.js?render=6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v" defer></script>
+    <script type="module" src="/js/config.js"></script>
+    <script type="module" src="/js/tracker.js"></script>
     <script src="/js/main.js" defer></script>
 </body>
 </html>
