@@ -1,119 +1,71 @@
-// functions/track/index.ts
-import { serve } from "sift";
-import { createClient } from "supabase";
+// supabase/functions/track/index.ts - TEMPORARY TEST CODE
+// Note: No external imports needed for this basic test
 
-// ✳️ Read ENV at load time
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const ALLOWED_ORIGIN_1 = 'https://ferinjoque.github.io';
+const ALLOWED_ORIGIN_2 = 'https://injoque.dev';
 
-// 1️⃣ If either is missing, crash immediately (no top-level `return`)
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  throw new Error('Missing required SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-}
+console.log("Basic test function starting..."); // Log start
 
-// 2️⃣ Init Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+Deno.serve(async (req: Request) => {
+  const url = new URL(req.url);
+  const origin = req.headers.get("origin") || "";
+  console.log(`Received: ${req.method} ${url.pathname} from origin: ${origin}`); // Log request
 
-// 3️⃣ Whitelist your GitHub Pages origin
-const ALLOWED_ORIGINS = new Set([
-  'https://ferinjoque.github.io',
-  'https://injoque.dev'
-]);
-
-serve(async (req) => {
-  const origin = req.headers.get('origin') || '';
-
-  // — OPTIONS preflight —
-  if (req.method === 'OPTIONS') {
-    if (!ALLOWED_ORIGINS.has(origin)) {
-      return new Response('Forbidden', { status: 403 });
+  // --- CORS Preflight Handling ---
+  if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request.");
+    // Check if origin is allowed
+    const isAllowed = origin === ALLOWED_ORIGIN_1 || origin === ALLOWED_ORIGIN_2;
+    if (isAllowed) {
+      console.log("Origin allowed. Sending 204 with CORS headers.");
+      return new Response(null, { // Use 204 No Content
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, x-session-id", // Match your actual request headers
+          "Access-Control-Max-Age": "86400",
+        },
+      });
+    } else {
+      console.log("Origin NOT allowed.");
+      return new Response("Forbidden", { status: 403 });
     }
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-session-id',
-        'Access-Control-Max-Age': '86400'
-      }
-    });
   }
 
-  // — Only POST allowed from here —
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', {
-      status: 405,
-      headers: { 'Allow': 'POST, OPTIONS' }
-    });
+  // --- Handle POST (Basic Response) ---
+  if (req.method === "POST") {
+     console.log("Handling POST request.");
+     // Check if origin is allowed for POST too
+     const isAllowed = origin === ALLOWED_ORIGIN_1 || origin === ALLOWED_ORIGIN_2;
+     if (!isAllowed) {
+         console.log("Origin NOT allowed for POST.");
+         return new Response("Forbidden", { status: 403 });
+     }
+
+     try {
+        const body = await req.json();
+        console.log("Received POST body:", body);
+        // In a real scenario, you'd process the body here
+     } catch (e) {
+         console.error("Error reading POST body:", e);
+         // Ignore body reading errors for this basic test
+     }
+
+     console.log("Sending basic POST success response with CORS header.");
+     return new Response(JSON.stringify({ success: true, message: "Basic test received POST" }), {
+       status: 200,
+       headers: {
+         "Access-Control-Allow-Origin": origin, // Still need this for the actual response
+         "Content-Type": "application/json",
+       },
+     });
   }
 
-  // — CORS on actual POST —
-  if (!ALLOWED_ORIGINS.has(origin)) {
-    return new Response('Forbidden', { status: 403 });
-  }
-  const corsHeaders = { 'Access-Control-Allow-Origin': origin };
-
-  // — Parse JSON body —
-  let payload: any;
-  try {
-    payload = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-      status: 400,
-      headers: { 
-        ...corsHeaders,
-        'Content-Type': 'application/json' 
-      }
-    });
-  }
-
-  const { event_type, event_data } = payload;
-  if (!event_type) {
-    return new Response(JSON.stringify({ error: 'Missing event_type' }), {
-      status: 400,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  // — Capture IP / UA / session —
-  const ip = req.headers.get('x-forwarded-for')
-          || req.headers.get('x-real-ip')
-          || (req.conn?.remoteAddr as any)?.hostname
-          || 'unknown';
-  const ua        = req.headers.get('user-agent') || 'unknown';
-  const sessionId = req.headers.get('x-session-id')    || 'none';
-
-  // — Insert into Supabase—
-  const { error: dbError } = await supabase
-    .from('events')
-    .insert({
-      ip_address: ip,
-      user_agent: ua,
-      session_id: sessionId,
-      event_type,
-      event_data
-    });
-
-  if (dbError) {
-    console.error('Supabase insert error:', dbError);
-    return new Response(JSON.stringify({ error: dbError.message }), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  // — Done! —
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'application/json'
-    }
+  // --- Default Response (Method Not Allowed / Not Found) ---
+  console.log(`Method ${req.method} not handled. Returning 405.`);
+  return new Response("Method Not Allowed", {
+    status: 405,
+    headers: { "Allow": "POST, OPTIONS" }, // Let browser know what's allowed
   });
 });
