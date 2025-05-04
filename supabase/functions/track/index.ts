@@ -107,7 +107,14 @@ Deno.serve(async (req: Request) => {
     console.log("DEBUG: Attempting Supabase insert...");
     const { error: dbError } = await supabase
       .from('events')
-      .insert({ ip_address: ip, user_agent: ua, session_id: sessionId, event_type, event_data });
+      .insert({
+      // Corrected keys to match SQL table columns:
+      event_type: event_type, // Matches 'event_type' column
+      payload:    event_data, // Changed 'event_data' key to 'payload'
+      ip:         ip,         // Changed 'ip_address' key to 'ip'
+      session_id: sessionId, // Matches 'session_id' column
+      user_agent: ua,
+    });
 
     if (dbError) {
       console.error('ERROR: Supabase insert error:', dbError);
