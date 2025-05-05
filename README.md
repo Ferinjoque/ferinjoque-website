@@ -71,7 +71,7 @@ Beyond showcasing projects and experience, this site features a custom-built ana
     ```
     bash
     git clone [https://github.com/Ferinjoque/ferinjoque-website.git](https://github.com/Ferinjoque/ferinjoque-website.git)
-    ferinjoque-website
+    cd ferinjoque-website
     ```
 2.  **Supabase Project:** Ensure you have a Supabase project set up.
 3.  **Database Schema:** Apply the necessary SQL to create the `events` table and the `events_view`. Enable the `pg_cron` extension via the Supabase Dashboard (Database -> Extensions). The required SQL can be found within the project.
@@ -83,7 +83,7 @@ Beyond showcasing projects and experience, this site features a custom-built ana
     * `SUPABASE_ACCESS_TOKEN`: Generate this from your Supabase account settings (Access Tokens).
     * `SUPABASE_PROJECT_REF`: Find this in your Supabase project's General Settings.
     * *(Optional)* You might need `OPENAI_API_KEY`, `RESEND_API_KEY`, `IPINFO_API_KEY` here too if your functions need them during the build/deploy phase, though typically they are only needed at runtime via `Deno.env.get()`). Usually, only the token and project ref are needed for deployment itself.
-6.  **Configure Email:** In `supabase/functions/weekly-report/index.ts`, update the placeholder `from:` and `to:` email addresses in the Resend API call section. The `from:` address must use a domain you have verified with Resend.
+6.  **Configure Email:** In `supabase/functions/weekly-report/index.ts`, update the `from:` and `to:` email addresses in the Resend API call section. The `from:` address must use a domain you have verified with Resend.
 7.  **Schedule Weekly Report:** In the Supabase SQL Editor, run the `cron.schedule` command to set up the weekly trigger for the `weekly-report` function.
 
 ## Deployment
@@ -95,7 +95,7 @@ Beyond showcasing projects and experience, this site features a custom-built ana
 
 1.  Create a read-only user in your Supabase database.
 2.  Connect Google Looker Studio using the **PostgreSQL** connector.
-3.  Use the database connection details found in Supabase Project Settings -> Database. Use a read-only user credentials.
+3.  Use the database connection details found in Supabase Project Settings -> Database. Use the read-only user credentials.
 4.  Connect to the `public.events_view` for easier reporting.
 
 ## Customization
@@ -107,9 +107,10 @@ Beyond showcasing projects and experience, this site features a custom-built ana
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## Acknowledgements
 
+* Bolt.new Team
 * Supabase Team
 * Deno Team
