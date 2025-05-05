@@ -1,7 +1,7 @@
 # Fernando Injoque - Portfolio & Analytics Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-This repository contains the source code for the personal portfolio website of Fernando Injoque ([injoque.dev](https://injoque.dev)), a Software Engineer student specializing in AI, Automation, and Sustainable Finance consulting & development.
+This repository contains the source code for the personal portfolio website of Fernando Injoque ([injoque.dev](https://injoque.dev)), a Software Engineering student specializing in AI, Automation, and Sustainable Finance consulting & development.
 
 Beyond showcasing projects and experience, this site features a custom-built analytics backend leveraging Supabase Edge Functions (Deno runtime) and PostgreSQL for tracking user interactions and generating automated, AI-enhanced insights.
 
