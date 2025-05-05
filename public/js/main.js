@@ -9,6 +9,42 @@ const sections = document.querySelectorAll('section');
 const navSections  = document.querySelectorAll('section[id]');
 const contactForm = document.getElementById('contactForm');
 
+const contactSection = document.getElementById('contact');
+let recaptchaLoaded = false; // Flag to prevent multiple loads
+
+const loadRecaptcha = (entries, observer) => {
+    entries.forEach(entry => {
+        // Check if the contact section is intersecting (visible) and script hasn't loaded
+        if (entry.isIntersecting && !recaptchaLoaded) {
+            console.log("DEBUG: Contact section visible, loading reCAPTCHA...");
+            recaptchaLoaded = true; // Set flag
+
+            // Create the script element
+            const script = document.createElement('script');
+            // IMPORTANT: Replace YOUR_SITE_KEY with your actual reCAPTCHA v3 Site Key
+            script.src = 'https://www.google.com/recaptcha/api.js?render=6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v';
+            script.defer = true; // Use defer
+            // script.async = true; // Alternatively use async
+
+            // Append to head or body
+            document.head.appendChild(script); // Appending to head is common
+
+            // Stop observing once loaded
+            observer.unobserve(contactSection);
+        }
+    });
+};
+
+// Only set up observer if contact section exists
+if (contactSection) {
+    const observerOptions = {
+        rootMargin: '0px', // Trigger as soon as it enters viewport
+        threshold: 0.1 // Trigger when 10% is visible
+    };
+    const observer = new IntersectionObserver(loadRecaptcha, observerOptions);
+    observer.observe(contactSection);
+}
+
 // Helper function to parse UTM parameters from URL
 function getUtmParams() {
     const params = new URLSearchParams(location.search);
@@ -124,6 +160,12 @@ if (contactForm) {
     if (!emailRegex.test(data.email)) {
       showFormMessage('Please enter a valid email address', 'error');
       return;
+    }
+
+    if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
+        showFormMessage('reCAPTCHA not loaded yet. Please wait a moment and try again.', 'error');
+        console.error("reCAPTCHA object not ready.");
+        return;
     }
 
     // run recaptcha v3
