@@ -69,8 +69,7 @@ Beyond showcasing projects and experience, this site features a custom-built ana
 
 1.  **Clone Repository:**
     ```
-    bash
-    git clone [https://github.com/Ferinjoque/ferinjoque-website.git](https://github.com/Ferinjoque/ferinjoque-website.git)
+    git clone https://github.com/Ferinjoque/ferinjoque-website.git
     cd ferinjoque-website
     ```
 2.  **Supabase Project:** Ensure you have a Supabase project set up.
