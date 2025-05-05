@@ -60,42 +60,84 @@ serve(async (req: Request) => {
         }
         console.log(`DEBUG: Fetched ${events.length} events.`);
 
-        // 3. GeoIP Enrichment (Optional)
-        const geoDataCache = new Map();
-        let topCountries: [string, number][] = [];
-        if (IPINFO_API_KEY) {
-            const uniqueIPs = [...new Set(events.map((e) => e.ip).filter((ip) => !!ip && ip !== "unknown"))];
-            console.log(`DEBUG: Found ${uniqueIPs.length} unique IPs for GeoIP lookup.`);
-            for (const ip of uniqueIPs) {
-                if (!geoDataCache.has(ip)) {
+            // 3. (Optional) GeoIP enrichment
+        const geoDataCache = new Map(); // Cache results per IP
+        // Get unique original IP strings first
+        const uniqueOriginalIpStrings = [...new Set(events.map((e) => e.ip).filter((ip) => !!ip && ip !== "unknown"))];
+    
+        console.log(`DEBUG: Found ${uniqueOriginalIpStrings.length} unique IP strings for GeoIP lookup.`);
+    
+        // Process each unique string to get the first IP and look it up
+        if (IPINFO_API_KEY) { // Only run if key is present
+            for (const originalIpString of uniqueOriginalIpStrings) {
+                // ---- START CHANGES ----
+                // Extract the first IP from the potentially comma-separated string
+                const firstIp = originalIpString.includes(',')
+                    ? originalIpString.split(',')[0].trim()
+                    : originalIpString.trim();
+    
+                // Skip if the extracted first IP is empty or invalid
+                if (!firstIp || firstIp === 'unknown') {
+                    console.log(`DEBUG: Skipping invalid first IP derived from: ${originalIpString}`);
+                    continue;
+                }
+                // ---- END CHANGES ----
+    
+                // Check cache using the FIRST IP now
+                if (!geoDataCache.has(firstIp)) {
+                    console.log(`DEBUG: Looking up GeoIP for first IP: ${firstIp} (from string: ${originalIpString})`);
                     try {
-                        const res = await fetch(`https://ipinfo.io/${ip}?token=${IPINFO_API_KEY}`);
+                        // Use the FIRST IP in the fetch URL
+                        const res = await fetch(`https://ipinfo.io/${firstIp}?token=${IPINFO_API_KEY}`);
                         if (res.ok) {
                             const info = await res.json();
-                            geoDataCache.set(ip, { country: info.country, region: info.region, city: info.city });
+                            // Store result in cache using the FIRST IP as key
+                            geoDataCache.set(firstIp, {
+                                country: info.country,
+                                region: info.region,
+                                city: info.city
+                            });
                         } else {
-                            console.warn(`WARN: GeoIP lookup failed for ${ip}: ${res.statusText}`);
-                            geoDataCache.set(ip, null);
+                            // Log failure with the IP we tried
+                            console.warn(`WARN: GeoIP lookup failed for ${firstIp} (from ${originalIpString}): ${res.status} ${res.statusText}`);
+                            geoDataCache.set(firstIp, null); // Cache failure for this IP
                         }
-                        await new Promise((r) => setTimeout(r, 100)); // Rate limit delay
                     } catch (err) {
-                        console.error(`ERROR: GeoIP lookup exception for ${ip}:`, err);
-                        geoDataCache.set(ip, null);
+                        // Log exception with the IP we tried
+                        console.error(`ERROR: GeoIP lookup exception for ${firstIp} (from ${originalIpString}):`, err);
+                        geoDataCache.set(firstIp, null); // Cache exception for this IP
                     }
+                    // Rate-limit delay
+                    await new Promise((r) => setTimeout(r, 100));
                 }
             }
             console.log("DEBUG: GeoIP lookups complete.");
-
-            // Aggregate Top Countries from Cache
-             const countryCounts = events.reduce((acc, e) => {
-                const geo = geoDataCache.get(e.ip);
-                if (geo?.country) acc[geo.country] = (acc[geo.country] || 0) + 1;
-                return acc;
-             }, {});
-             topCountries = Object.entries(countryCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 5);
         } else {
             console.log("DEBUG: Skipping GeoIP lookup (no IPINFO_API_KEY set).");
         }
+    
+        // Add geo data back to events using the derived first IP for lookup
+        const eventsWithGeo = events.map((evt) => {
+            // ---- START CHANGES ----
+            // Also extract the first IP here to look up the correct cache entry
+            const originalIpString = evt.ip || '';
+            const firstIp = originalIpString.includes(',')
+                ? originalIpString.split(',')[0].trim()
+                : originalIpString.trim();
+            // Look up the cache using the first IP
+            const geo = (firstIp && firstIp !== 'unknown') ? (geoDataCache.get(firstIp) || null) : null;
+            // ---- END CHANGES ----
+            return {
+                ...evt,
+                geo: geo // Add the looked-up geo data (or null)
+            };
+        });
+    
+        const countryCounts = eventsWithGeo.reduce((acc, e)=>{ // Use eventsWithGeo now
+          if (e.geo?.country) acc[e.geo.country] = (acc[e.geo.country] || 0) + 1;
+          return acc;
+        }, {});
+        topCountries = Object.entries(countryCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 5);
 
 
         // 4. Aggregate Data & Create Summary for AI
