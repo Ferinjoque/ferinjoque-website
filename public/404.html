@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | Fernando Injoque</title>
+    <link rel="stylesheet" href="/assets/index.css"> <script src="https://cdn.tailwindcss.com"></script> <style>
+        /* Add the glitch effect CSS for the logo if desired */
+        /* You can copy the relevant .glitch CSS rules from your main styles.css */
+        /* Or simply omit the glitch effect on the 404 page */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+             /* Match your main site's dark background */
+            background-color: #0c0c0c;
+        }
+         /* Basic Glitch for Logo */
+         .glitch {
+             position: relative;
+             color: #eaeaea; /* --color-text */
+             text-decoration: none;
+             font-size: 1.75rem;
+             font-weight: 700;
+         }
+         .glitch::before,
+         .glitch::after {
+             content: attr(data-text);
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             background: #0c0c0c; /* --color-bg */
+             overflow: hidden;
+             clip-path: inset(50% 50% 50% 50%); /* Minimal initial clip */
+         }
+         .glitch:hover::before {
+             left: 2px;
+             text-shadow: -1px 0 #4CAF50; /* --color-primary */
+             animation: glitch-anim-1 2s infinite linear alternate-reverse;
+         }
+          .glitch:hover::after {
+             left: -2px;
+             text-shadow: 1px 0 #3F51B5; /* --color-accent */
+             animation: glitch-anim-2 3s infinite linear alternate-reverse;
+         }
+
+         @keyframes glitch-anim-1 {
+             0% { clip-path: inset(15% 0 70% 0); }
+             20% { clip-path: inset(80% 0 5% 0); }
+             40% { clip-path: inset(30% 0 40% 0); }
+             60% { clip-path: inset(55% 0 20% 0); }
+             80% { clip-path: inset(10% 0 85% 0); }
+             100% { clip-path: inset(75% 0 10% 0); }
+         }
+         @keyframes glitch-anim-2 {
+             0% { clip-path: inset(70% 0 15% 0); }
+             20% { clip-path: inset(5% 0 90% 0); }
+             40% { clip-path: inset(45% 0 35% 0); }
+             60% { clip-path: inset(25% 0 60% 0); }
+             80% { clip-path: inset(90% 0 2% 0); }
+             100% { clip-path: inset(15% 0 75% 0); }
+         }
+    </style>
+</head>
+<body class="bg-[#0c0c0c] text-[#eaeaea] font-['Inter',sans-serif] flex flex-col items-center justify-center min-h-screen p-6">
+
+    <div class="text-center">
+        <div class="mb-8">
+             <a href="/" class="glitch inline-block" data-text="FI">FI</a>
+        </div>
+
+        <h1 class="text-6xl md:text-8xl font-bold text-[#4CAF50] mb-4 animate-pulse">404</h1>
+        <h2 class="text-2xl md:text-4xl font-semibold mb-6 text-white">Page Not Found</h2>
+        <p class="text-lg text-[#aaaaaa] mb-8 max-w-md mx-auto">
+            Oops! It seems the page you're looking for doesn't exist or has been moved. Maybe the URL is incorrect?
+        </p>
+        <a href="/" class="inline-block px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-md shadow-md transition-transform duration-200 ease-in-out hover:bg-[#388E3C] hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#81C784] focus:ring-opacity-50">
+            Go Back Home
+        </a>
+    </div>
+
+    </body>
+</html>
