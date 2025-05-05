@@ -1,34 +1,74 @@
-name: Build & Deploy to Pages
+name: Build & Deploy to GitHub Pages # Renamed for clarity
 
 on:
   push:
     branches: [ main ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# This is required for the actions/deploy-pages step
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  # Build job
+  build: # Renamed job slightly for clarity
     runs-on: ubuntu-latest
-
     steps:
       # 1) Check out your code
-      - uses: actions/checkout@v4
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
 
-      # 2) Set up Node.js
-      - name: Use Node.js
+      # 2) Set up Node.js (Updated to v20 LTS & added caching)
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm' # Or 'yarn'/'pnpm' if you use those
 
       # 3) Install npm dependencies
-      - name: Install dependencies
-        run: npm install
+      - name: Install dependencies 🔧
+        run: npm install # Or appropriate install command
 
       # 4) Build your Vite/React site (outputs to docs/)
-      - name: Build site
-        run: npm run build
+      - name: Build site 🏗️
+        run: npm run build # Ensure this command actually outputs to the './docs' directory
 
-      # 5) Commit & push the docs/ folder back to main
-      - name: Commit and push docs/
-        uses: stefanzweifel/git-auto-commit-action@v4
+      # 5) Upload build artifact (Replaces the auto-commit step)
+      - name: Upload artifact 📦
+        uses: actions/upload-pages-artifact@v3
         with:
-          commit_message: "📦 build docs/"
-          file_pattern: docs/*
+          # Upload contents of the './docs' directory (the build output)
+          path: './docs'
+
+  # Deployment job
+  deploy:
+    # Add a dependency to the build job
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to deploy to GitHub Pages
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages 🚀
+        id: deployment
+        uses: actions/deploy-pages@v4
+        # This uses the artifact uploaded by the 'build' job
