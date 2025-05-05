@@ -60,29 +60,32 @@ serve(async (req: Request) => {
         }
         console.log(`DEBUG: Fetched ${events.length} events.`);
 
-            // 3. (Optional) GeoIP enrichment
-        const geoDataCache = new Map(); // Cache results per IP
-        // Get unique original IP strings first
-        const uniqueOriginalIpStrings = [...new Set(events.map((e) => e.ip).filter((ip) => !!ip && ip !== "unknown"))];
-    
-        console.log(`DEBUG: Found ${uniqueOriginalIpStrings.length} unique IP strings for GeoIP lookup.`);
-    
-        // Process each unique string to get the first IP and look it up
-        if (IPINFO_API_KEY) { // Only run if key is present
+        // 3. (Optional) GeoIP enrichment
+        const geoDataCache = new Map<string, { country: string, region: string, city: string } | null>(); // Added type hint for map
+        let topCountries: [string, number][] = []; // Initialize outside the if block
+
+        if (IPINFO_API_KEY) {
+            const uniqueOriginalIpStrings = [...new Set(events.map((e) => e.ip).filter((ip) => typeof ip === 'string' && ip !== "unknown"))]; // Filter for strings explicitly
+
+            console.log(`DEBUG: Found ${uniqueOriginalIpStrings.length} unique IP strings for GeoIP lookup.`);
+
             for (const originalIpString of uniqueOriginalIpStrings) {
-                // ---- START CHANGES ----
-                // Extract the first IP from the potentially comma-separated string
-                const firstIp = originalIpString.includes(',')
-                    ? originalIpString.split(',')[0].trim()
-                    : originalIpString.trim();
-    
+                // --- START FIX for includes/split/trim ---
+                // We already filtered for strings, but double-checking adds safety
+                let firstIp = '';
+                if (typeof originalIpString === 'string') {
+                    firstIp = originalIpString.includes(',')
+                        ? originalIpString.split(',')[0].trim()
+                        : originalIpString.trim();
+                }
+                // --- END FIX ---
+
                 // Skip if the extracted first IP is empty or invalid
                 if (!firstIp || firstIp === 'unknown') {
                     console.log(`DEBUG: Skipping invalid first IP derived from: ${originalIpString}`);
                     continue;
                 }
-                // ---- END CHANGES ----
-    
+
                 // Check cache using the FIRST IP now
                 if (!geoDataCache.has(firstIp)) {
                     console.log(`DEBUG: Looking up GeoIP for first IP: ${firstIp} (from string: ${originalIpString})`);
@@ -93,52 +96,48 @@ serve(async (req: Request) => {
                             const info = await res.json();
                             // Store result in cache using the FIRST IP as key
                             geoDataCache.set(firstIp, {
-                                country: info.country,
+                                country: info.country, // Assuming these fields exist
                                 region: info.region,
                                 city: info.city
                             });
                         } else {
-                            // Log failure with the IP we tried
                             console.warn(`WARN: GeoIP lookup failed for ${firstIp} (from ${originalIpString}): ${res.status} ${res.statusText}`);
-                            geoDataCache.set(firstIp, null); // Cache failure for this IP
+                            geoDataCache.set(firstIp, null); // Cache failure
                         }
                     } catch (err) {
-                        // Log exception with the IP we tried
                         console.error(`ERROR: GeoIP lookup exception for ${firstIp} (from ${originalIpString}):`, err);
-                        geoDataCache.set(firstIp, null); // Cache exception for this IP
+                        geoDataCache.set(firstIp, null); // Cache exception
                     }
                     // Rate-limit delay
                     await new Promise((r) => setTimeout(r, 100));
                 }
             }
             console.log("DEBUG: GeoIP lookups complete.");
+
+             // --- Aggregate Top Countries from Cache (INSIDE the 'if' block) ---
+             const countryCounts = events.reduce((acc, e) => {
+                 // --- START FIX for includes/split/trim in reduce ---
+                 const currentOriginalIp = typeof e.ip === 'string' ? e.ip : '';
+                 const currentFirstIp = currentOriginalIp.includes(',')
+                     ? currentOriginalIp.split(',')[0].trim()
+                     : currentOriginalIp.trim();
+                 // --- END FIX ---
+                 const geo = (currentFirstIp && currentFirstIp !== 'unknown') ? (geoDataCache.get(currentFirstIp) || null) : null;
+
+                 if (geo?.country && typeof geo.country === 'string') { // Check if country is a string
+                    acc[geo.country] = (acc[geo.country] || 0) + 1;
+                 }
+                 return acc;
+             }, {} as { [key: string]: number }); // Add type hint to accumulator
+
+             topCountries = Object.entries(countryCounts)
+                 .sort(([, a], [, b]) => Number(b) - Number(a)) // Use Number() for safety
+                 .slice(0, 5);
+             // --- End Aggregation ---
+
         } else {
             console.log("DEBUG: Skipping GeoIP lookup (no IPINFO_API_KEY set).");
         }
-    
-        // Add geo data back to events using the derived first IP for lookup
-        const eventsWithGeo = events.map((evt) => {
-            // ---- START CHANGES ----
-            // Also extract the first IP here to look up the correct cache entry
-            const originalIpString = evt.ip || '';
-            const firstIp = originalIpString.includes(',')
-                ? originalIpString.split(',')[0].trim()
-                : originalIpString.trim();
-            // Look up the cache using the first IP
-            const geo = (firstIp && firstIp !== 'unknown') ? (geoDataCache.get(firstIp) || null) : null;
-            // ---- END CHANGES ----
-            return {
-                ...evt,
-                geo: geo // Add the looked-up geo data (or null)
-            };
-        });
-    
-        const countryCounts = eventsWithGeo.reduce((acc, e)=>{ // Use eventsWithGeo now
-          if (e.geo?.country) acc[e.geo.country] = (acc[e.geo.country] || 0) + 1;
-          return acc;
-        }, {});
-        topCountries = Object.entries(countryCounts).sort(([, a], [, b]) => Number(b) - Number(a)).slice(0, 5);
-
 
         // 4. Aggregate Data & Create Summary for AI
         const totalEvents = events.length;
