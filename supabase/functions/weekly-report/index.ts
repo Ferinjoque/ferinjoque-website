@@ -279,8 +279,8 @@ serve(async (req: Request) => {
                 "Authorization": `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: "Analytist <analyst@injoque.dev>", // IMPORTANT: Change to your verified Resend domain
-                to: ["github@injoque.dev"], // IMPORTANT: Change to your actual email
+                from: "Analyst <analyst@injoque.dev>",
+                to: ["github@injoque.dev"],
                 subject: emailSubject,
                 html: emailHtmlBody,
             }),
