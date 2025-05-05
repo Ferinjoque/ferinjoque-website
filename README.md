@@ -54,30 +54,56 @@ Beyond showcasing projects and experience, this site features a custom-built ana
 
 ## Project Structure
 ```
-/
+.
+├── .bolt/
+│   ├── config.json
+│   └── prompt
 ├── .github/
-│   └── workflows/
-│       └── deploy_functions.yml  # GitHub Action for deployment
-├── index.html                    # Main site content
-├── README.md                     # This file
-├── css/
-│   └── styles.css                # Site styling
-├── js/
-│   ├── main.js                   # Frontend logic, event triggering
-│   └── tracker.js                # Sends events to Edge Function
-├── assets/                       # Site images, icons, etc.
-├── supabase/                     # Supabase project configuration
-│   ├── config.toml               # Supabase CLI config (function settings)
-│   ├── import_map.json           # Deno import map for functions
+│   ├── workflows/
+│   │   ├── deploy_functions.yml # For Supabase function deployment
+│   │   └── pages.yml            # For GitHub Pages deployment from /docs
+│   └── FUNDING.yml
+├── .gitignore
+├── .supabase/                  # Supabase project configuration & functions
+│   ├── config.toml             # Supabase CLI config (function settings etc.)
+│   ├── import_map.json         # Deno import map for functions
 │   └── functions/
-│       ├── _shared/              # (Optional shared function code)
 │       ├── track/                # Edge Function: Receives tracking events
 │       │   ├── deno.json         # Deno config for 'track' function
 │       │   └── index.ts          # Code for 'track' function
 │       └── weekly-report/        # Edge Function: Generates weekly report
 │           ├── deno.json         # Deno config for 'weekly-report'
 │           └── index.ts          # Code for 'weekly-report'
-└── .gitignore                    # Git ignore rules
+├── css/                        
+│   ├── normalize.css
+│   └── styles.css
+├── docs/                       
+│   └── ...                     # (Content mirrors built output, often from 'public' + compiled 'src')
+├── public/                     
+│   ├── assets/
+│   │   ├── jpgs
+│   ├── js/
+│   │   ├── main.js             # Main frontend logic
+│   │   └── tracker.js          # Tracking script logic
+│   ├── pngs
+│   ├── favicon.ico
+│   └── site.webmanifest
+├── src/                        # Source code for the frontend application
+│   ├── App.tsx                 # Main App component
+│   ├── index.css               # Main CSS entry point
+│   ├── main.tsx                # Main entry point for React application
+│   └── vite-env.d.ts           # Vite environment types
+├── eslint.config.js            # ESLint configuration
+├── index.html                  # Root HTML file (template for Vite)
+├── package-lock.json           # Node.js dependency lock file
+├── package.json                # Node.js project manifest, dependencies, scripts
+├── postcss.config.js           # PostCSS configuration
+├── README.md                   # Project documentation
+├── tailwind.config.js          # Tailwind CSS configuration
+├── tsconfig.app.json           # TypeScript config for the application
+├── tsconfig.json               # Base TypeScript config
+├── tsconfig.node.json          # TypeScript config for Node environment
+└── vite.config.ts              # Vite build tool configuration
 ```
 
 ## Setup & Configuration
