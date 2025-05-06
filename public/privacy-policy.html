@@ -117,8 +117,8 @@
         <p class="mb-3 ml-6">When you consent to analytics tracking via our cookie banner, the following information may be collected and processed:</p>
         <ul class="mb-4 ml-12">
             <li class="mb-2"><strong>• Event Type:</strong> The specific action taken (e.g., page_view, section_view, click, hover).</li>
-            <li class="mb-2"><strong>• Event Details (payload):</strong> Contextual data associated with the event, stored in a structured format (JSONB), including:
-                <ul class="mb-4 ml-[4.5rem]">
+            <li class="mb-2"><strong>• Event Details (payload):</strong> Contextual data associated with the event, stored in a structured format (JSONB). This may include:
+                <ul class="mb-4 ml-[4rem]">
                     <li class="mb-2">◦ URL visited (location.href)</li>
                     <li class="mb-2">◦ Page title (document.title)</li>
                     <li class="mb-2">◦ Page pathname (location.pathname)</li>
@@ -126,19 +126,20 @@
                     <li class="mb-2">◦ Element interacted with (e.g., identifier of a button or link)</li>
                     <li class="mb-2">◦ Text content of the element interacted with</li>
                     <li class="mb-2">◦ Target URL (href) of clicked links</li>
-                    <li class="mb-2">◦ UTM Parameters (utm_source, utm_medium, utm_campaign, utm_term, utm_content)</li>
+                    <li class="mb-2">◦ UTM Parameters (utm_source, utm_medium, utm_campaign, utm_term, utm_content from the URL, if present)</li>
                     <li class="mb-2">◦ Timestamp of the event</li>
                 </ul>
             </li>
-            <li class="mb-2"><strong>• Session ID:</strong> A randomly generated unique identifier stored in <code>sessionStorage</code>, cleared when the browser tab/window is closed.</li>
-            <li class="mb-2"><strong>• IP Address:</strong> Collected for identifying unique visitors and GeoIP lookups.</li>
-            <li class="mb-2"><strong>• User Agent:</strong> Browser type, version, and operating system.</li>
-            <li class="mb-2"><strong>• Referrer URL:</strong> The page URL you came from before visiting this site.</li>
-            <li class="mb-2"><strong>• Device Information:</strong> Screen and viewport dimensions.</li>
-            <li class="mb-2"><strong>• Browser Information:</strong> Preferred language and inferred timezone.</li>
+            <li class="mb-2"><strong>• Session ID:</strong> A randomly generated unique identifier (sessionId stored in sessionStorage) used solely to link together events occurring during a single browsing session. This ID is temporary and is cleared when you close your browser tab/window.</li>
+            <li class="mb-2"><strong>• IP Address:</strong> Your Internet Protocol address. This is collected to help identify unique visitors (approximately) and is used for GeoIP lookups (see below). We store the IP address associated with events.</li>
+            <li class="mb-2"><strong>• User Agent:</strong> Information about your browser type, version, and operating system provided by your browser.</li>
+            <li class="mb-2"><strong>• Referrer URL:</strong> The address of the webpage you came from before visiting this site, if provided by your browser.</li>
+            <li class="mb-2"><strong>• Device Information:</strong> Screen width and height, browser viewport width and height.</li>
+            <li class="mb-2"><strong>• Browser Information:</strong> Preferred language (navigator.language), inferred timezone (Intl.DateTimeFormat().resolvedOptions().timeZone).</li>
         </ul>
     
         <h3 class="mt-6 mb-4 ml-6">b) Information Collected via Contact Form:</h3>
+        <p class="mb-3 ml-6">If you use the contact form, I collect:</p>
         <ul class="mb-4 ml-12">
             <li>• Your Name</li>
             <li>• Your Email Address</li>
@@ -147,68 +148,79 @@
         <p class="mb-3 ml-6">This information is processed via Formspree to deliver your message to me.</p>
     
         <h3 class="mt-6 mb-4 ml-6">c) Information Collected for Security (reCAPTCHA):</h3>
-        <p class="mb-3 ml-6">This website uses Google reCAPTCHA v3 on the contact form to protect against spam and automated abuse. reCAPTCHA collects hardware and software information and sends it to Google for analysis. This service operates under <a href="https://policies.google.com/privacy">Google's Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a>.</p>
+        <p class="mb-3 ml-6">This website uses Google reCAPTCHA v3 on the contact form to protect against spam and automated abuse. reCAPTCHA collects hardware and software information, such as device and application data, and sends it to Google for analysis to determine whether the visitor is likely human. This service operates under <a href="https://policies.google.com/privacy">Google's Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a>.</p>
     
         <h2 class="mt-8 mb-4">4. How We Use Your Information</h2>
         <p class="mb-3">The information collected is used for the following purposes:</p>
         <ul class="mb-4 ml-6">
-            <li class="mb-2"><strong>• Website Analytics:</strong> Understand navigation, popular content, traffic sources, and demographics.</li>
-            <li class="mb-2"><strong>• AI-Driven Insights:</strong> Aggregated analytics data may be sent to the <a href="https://openai.com/policies/privacy-policy">OpenAI API</a> to generate high-level insights.</li>
-            <li class="mb-2"><strong>• GeoIP Location:</strong> IP addresses are used with <a href="https://ipinfo.io/">ipinfo.io</a> to determine visitor locations.</li>
-            <li class="mb-2"><strong>• Security:</strong> Protect site functions using Google reCAPTCHA v3.</li>
-            <li class="mb-2"><strong>• Communication:</strong> Respond to contact form inquiries.</li>
-            <li class="mb-2"><strong>• Functionality:</strong> Ensure the website operates correctly.</li>
+            <li class="mb-2"><strong>• Website Analytics:</strong> To understand how visitors navigate and interact with the website, identify popular content and features, analyze traffic sources (referrers, UTM campaigns), understand general user demographics (browser, device type, approximate location via GeoIP), and generate aggregated statistical reports to improve the website's design, content, and performance.</li>
+            <li class="mb-2"><strong>• AI-Driven Insights:</strong> : Aggregated and anonymized analytics data (summarized metrics like total visits, top pages, top referrers, top countries etc., not individual event logs) may be sent periodically to the OpenAI API to generate high-level insights, trends, or summaries about website usage patterns. This helps in understanding the overall performance without analyzing raw individual data points manually.</li>
+            <li class="mb-2"><strong>• GeoIP Location:</strong> IP addresses collected via analytics are used to determine the approximate geographical location (country, region, city) of visitors using the ipinfo.io service. This aggregated location data helps understand the global audience reach.</li>
+            <li class="mb-2"><strong>• Security:</strong> To protect the website and its functionalities (like the contact form) from spam and automated abuse using Google reCAPTCHA v3.</li>
+            <li class="mb-2"><strong>• Communication:</strong> To respond to inquiries submitted through the contact form.</li>
+            <li class="mb-2"><strong>• Functionality:</strong> To ensure the website functions correctly.</li>
         </ul>
     
         <h2 class="mt-8 mb-4">5. Legal Basis for Processing (GDPR)</h2>
-        <p class="mb-3">If you are accessing this website from the EEA, processing is based on:</p>
+        <p class="mb-3">If you are accessing this website from the European Economic Area (EEA), the processing of your personal data is based on the following legal grounds:</p>
         <ul class="mb-4 ml-6">
-            <li class="mb-2"><strong>• Consent:</strong> For analytics data collection (section 3a).</li>
-            <li class="mb-2"><strong>• Legitimate Interests:</strong> For using Google reCAPTCHA v3.</li>
-            <li class="mb-2"><strong>• Contractual Necessity / Legitimate Interests:</strong> For contact form submissions.</li>
+            <li class="mb-2"><strong>• Consent:</strong> For the collection and processing of analytics data described in section 3a (including associated cookies/storage like sessionId's purpose), the legal basis is your explicit consent, which you provide via the cookie consent banner. You can withdraw this consent at any time through the banner settings.</li>
+            <li class="mb-2"><strong>• Legitimate Interests:</strong> For the use of Google reCAPTCHA v3, the legal basis is my legitimate interest in protecting the website and its contact form from spam and abuse. We ensure transparency about its use.</li>
+            <li class="mb-2"><strong>• Contractual Necessity / Legitimate Interests:</strong> For processing data submitted through the contact form, the basis is taking steps at your request prior to potentially entering into a contract (if inquiring about services) or my legitimate interest in responding to your communication.</li>
         </ul>
     
         <h2 class="mt-8 mb-4">6. Cookies, Session Storage, and Similar Technologies</h2>
-        <p class="mb-3">This site uses:</p>
+        <p class="mb-3">This website uses the following:</p>
         <ul class="mb-4 ml-6">
-            <li class="mb-2"><strong>• Cookies (reCAPTCHA):</strong> Strictly Necessary or Functional cookies set by Google reCAPTCHA.</li>
-            <li class="mb-2"><strong>• Session Storage:</strong> <code>sessionId</code> for analytics, cleared on tab/window close.</li>
+            <li class="mb-2"><strong>• Cookies (reCAPTCHA):</strong> Google reCAPTCHA v3 sets cookies (e.g., _GRECAPTCHA) on your browser. These cookies are essential for its risk analysis function to distinguish between human users and bots. These are categorized as Strictly Necessary or Functional for security purposes and are loaded automatically. By using the contact form, you interact with this service. For more information, please review Google's Privacy Policy and Terms of Service.</li>
+            <li class="mb-2"><strong>• Session Storage (sessionId):</strong> As part of our custom analytics (which requires your consent), we use browser sessionStorage to store a randomly generated sessionId. This is not a traditional cookie. Session storage is temporary and is automatically cleared by your browser when you close the browser tab or window where you viewed the website. It is used solely to link together the sequence of actions (page views, clicks, etc.) you perform during a single visit for analytical purposes. This storage is categorized under Analytics/Performance in our consent banner.</li>
         </ul>
-        <p class="mb-3">Manage consent via the cookie consent banner or browser settings.</p>
+        <p class="mb-3">You can manage your consent preferences for non-essential technologies (like our analytics sessionId) through the cookie consent banner presented when you first visit the site. You can also typically control cookies through your browser settings.</p>
     
         <h2 class="mt-8 mb-4">7. Data Sharing and Third Parties</h2>
-        <p class="mb-3">I do not sell personal information. Data is shared with:</p>
+        <p class="mb-3">I do not sell your personal information. However, I share information with the following third-party service providers who assist in operating the website and processing data:</p>
         <ul class="mb-4 ml-6">
-            <li class="mb-2">• <a href="https://supabase.com/privacy">Supabase</a> for backend infrastructure.</li>
-            <li class="mb-2">• <a href="https://docs.github.com/en/github/site-policy/github-privacy-statement">GitHub Pages</a> for hosting.</li>
-            <li class="mb-2">• <a href="https://policies.google.com/privacy">Google (reCAPTCHA)</a>.</li>
-            <li class="mb-2">• <a href="https://formspree.io/privacy">Formspree</a>.</li>
-            <li class="mb-2">• <a href="https://openai.com/policies/privacy-policy">OpenAI</a>.</li>
-            <li class="mb-2">• <a href="https://resend.com/privacy">Resend</a>.</li>
-            <li class="mb-2">• <a href="https://ipinfo.io/privacy">ipinfo.io</a>.</li>
+            <li class="mb-2"><strong>• <a href="https://supabase.com/privacy">Supabase</a></strong>: Provides the backend infrastructure, including PostgreSQL database hosting for storing analytics data and Edge Functions (Deno runtime) for processing tracking events and generating automated reports. Data is processed according to their policies.</li>
+            <li class="mb-2"><strong>• <a href="https://docs.github.com/en/github/site-policy/github-privacy-statement">GitHub Pages</a></strong>: Hosts the static frontend files of this website. Data may be processed according to their policies.</li>
+            <li class="mb-2"><strong>• <a href="https://policies.google.com/privacy">Google (reCAPTCHA)</a></strong>: Provides the reCAPTCHA v3 service for spam protection. Information collected by reCAPTCHA is subject to Google's policies.</li>
+            <li class="mb-2"><strong>• <a href="https://formspree.io/privacy">Formspree</a></strong>: Processes submissions from the contact form to deliver them via email.</li>
+            <li class="mb-2"><strong>• <a href="https://openai.com/policies/privacy-policy">OpenAI</a></strong>: Aggregated, anonymized analytics data summaries (not individual event logs or personal data like full IP addresses) are sent to the OpenAI API to generate automated weekly insights.</li>
+            <li class="mb-2"><strong>• <a href="https://resend.com/privacy">Resend</a></strong>: Used to send the automated weekly analytics report email.</li>
+            <li class="mb-2"><strong>• <a href="https://ipinfo.io/privacy">ipinfo.io</a></strong>: IP addresses collected via analytics are sent to ipinfo.io to obtain approximate geolocation data. </li>
         </ul>
     
         <h2 class="mt-8 mb-4">8. Data Retention</h2>
         <p class="mb-4 ml-6">
-            <strong class="mb-2">• Analytics Data:</strong> Raw logs retained for [Specify Period, e.g., 12 months], aggregated data indefinitely.<br>
-            <strong class="mb-2">• Contact Form Submissions:</strong> Retained for [Specify Period, e.g., 24 months] or as required.<br>
-            <strong class="mb-2">• Session Storage:</strong> Cleared on browser close.
+            <strong class="mb-2">• Analytics Data:</strong> Raw event logs stored in the Supabase database, including associated IP addresses and session IDs, will be retained for a period of <strong>12 months</strong> for analysis and reporting purposes, after which they may be deleted or fully anonymized. Aggregated statistical data (which does not identify individuals) may be retained indefinitely.<br>
+            <strong class="mb-2">• Contact Form Submissions:</strong> Emails received via Formspree are retained as necessary to respond to inquiries and for record-keeping, typically for <strong>24 months</strong> unless required longer for legal reasons.<br>
+            <strong class="mb-2">• Session Storage (sessionId):</strong> Cleared automatically when you close your browser tab/window.
         </p>
     
         <h2 class="mt-8 mb-4">9. Data Security</h2>
-        <p class="mb-3">Reasonable technical and organizational measures are in place, including HTTPS and access controls, but no system is 100% secure.</p>
+        <p class="mb-3">I take reasonable technical and organizational measures to protect the information collected. This includes using reputable service providers like Supabase and GitHub Pages, utilizing secure connections (HTTPS), and managing access controls. However, no internet transmission or electronic storage is 100% secure, and I cannot guarantee absolute security.</p>
     
         <h2 class="mt-8 mb-4">10. Your Data Protection Rights</h2>
-        <p class="mb-3">You may have rights including Access, Rectification, Erasure, Restriction, Objection, Portability, and Withdrawal of Consent. To exercise these rights, contact me at <a href="mailto:github@injoque.dev">github@injoque.dev</a>.</p>
+        <p class="mb-3">Depending on your location, you may have the following rights regarding your personal data:</p>
+        <ul class="mb-4 ml-6">
+            <li class="mb-2"><strong>• Right to Access:</strong> You can request copies of your personal data.</li>
+            <li class="mb-2"><strong>• Right to Rectification:</strong> You can request correction of inaccurate information or completion of incomplete information.</li>
+            <li class="mb-2"><strong>• Right to Erasure:</strong> You can request the deletion of your personal data under certain conditions.</li>
+            <li class="mb-2"><strong>• Right to Restrict Processing:</strong> You can request the restriction of processing your personal data under certain conditions.</li>
+            <li class="mb-2"><strong>• Right to Object to Processing:</strong> You can object to the processing of your personal data under certain conditions (especially where based on legitimate interests).</li>
+            <li class="mb-2"><strong>• Right to Data Portability:</strong> You can request the transfer of data collected to another organization, or directly to you, under certain conditions.</li>
+            <li class="mb-2"><strong>• Right to Withdraw Consent:</strong> Where processing is based on consent (like analytics), you can withdraw your consent at any time via the cookie consent settings.</li>
+            
+        </ul>
+        <p class="mb-3">To exercise any of these rights, please contact me at <a href="mailto:legal@injoque.dev">legal@injoque.dev</a>. I will respond to your request in accordance with applicable data protection laws. You may also have the right to lodge a complaint with a relevant data protection authority.</p>
     
         <h2 class="mt-8 mb-4">11. Children's Privacy</h2>
-        <p class="mb-3">This website is not intended for children under 13 (or 16 in some jurisdictions). If you believe a child provided personal data, contact me for deletion.</p>
+        <p class="mb-3">This website is not intended for use by children under the age of 16. I do not knowingly collect personal information from children. If you believe a child has provided me with personal information, please contact me, and I will take steps to delete it.</p>
     
         <h2 class="mt-8 mb-4">12. Changes to This Policy</h2>
-        <p class="mb-3">I may update this policy periodically. Changes will be posted with an updated "Last Updated" date.</p>
+        <p class="mb-3">I may update this Privacy & Cookie Policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date. I encourage you to review this policy periodically.</p>
     
         <h2 class="mt-8 mb-4">13. Contact Information</h2>
-        <p class="mb-3">If you have any questions about this policy or data practices, please contact:</p>
+        <p class="mb-3">If you have any questions about this Privacy & Cookie Policy or my data practices, please contact me at:</p>
         <p class="mb-4 ml-6">• Fernando Injoque<br>
         • Email: <a href="mailto:legal@injoque.dev">legal@injoque.dev</a></p>
 
