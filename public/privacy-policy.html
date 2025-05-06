@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy & Cookie Policy - Fernando Injoque</title>
+    <meta name="description" content="Privacy and Cookie Policy for the personal portfolio website of Fernando Injoque (injoque.dev).">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <style>
+        /* Basic styles to match theme */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0c0c; /* Dark background */
+            color: #eaeaea; /* Light text */
+        }
+        /* Style headings and links to match theme */
+        h1, h2, h3 {
+            color: #ffffff; /* White headings */
+            font-weight: 600; /* Semibold */
+            margin-bottom: 0.75em; /* Spacing below headings */
+            margin-top: 1.5em; /* Spacing above headings */
+        }
+        h1 { font-size: 2.25rem; line-height: 2.5rem; margin-top: 0; } /* 36px */
+        h2 { font-size: 1.5rem; line-height: 2rem; } /* 24px */
+        h3 { font-size: 1.25rem; line-height: 1.75rem; } /* 20px */
+        p {
+            line-height: 1.6;
+            margin-bottom: 1em;
+            color: #aaaaaa; /* Muted text color */
+        }
+        a {
+            color: #4CAF50; /* Primary green color */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #81C784; /* Lighter green on hover */
+        }
+        ul {
+            list-style: disc;
+            margin-left: 1.5em;
+            margin-bottom: 1em;
+            color: #aaaaaa;
+        }
+        li {
+            margin-bottom: 0.5em;
+        }
+        strong {
+             color: #eaeaea; /* Slightly brighter text for emphasis */
+             font-weight: 600;
+        }
+        hr {
+             border-color: rgba(255, 255, 255, 0.1);
+             margin-top: 2em;
+             margin-bottom: 2em;
+        }
+        /* Basic Glitch for Logo */
+         .glitch {
+             position: relative;
+             color: #eaeaea; /* --color-text */
+             text-decoration: none;
+             font-size: 1.75rem;
+             font-weight: 700;
+             display: inline-block; /* Needed for positioning */
+         }
+         .glitch::before,
+         .glitch::after {
+             content: attr(data-text);
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             background: #0c0c0c; /* --color-bg */
+             overflow: hidden;
+             clip-path: inset(50% 50% 50% 50%);
+         }
+         .glitch:hover::before {
+             left: 2px;
+             text-shadow: -1px 0 #4CAF50; /* --color-primary */
+             animation: glitch-anim-1 2s infinite linear alternate-reverse;
+         }
+          .glitch:hover::after {
+             left: -2px;
+             text-shadow: 1px 0 #3F51B5; /* --color-accent */
+             animation: glitch-anim-2 3s infinite linear alternate-reverse;
+         }
+
+         @keyframes glitch-anim-1 {
+             0% { clip-path: inset(15% 0 70% 0); } 20% { clip-path: inset(80% 0 5% 0); } 40% { clip-path: inset(30% 0 40% 0); } 60% { clip-path: inset(55% 0 20% 0); } 80% { clip-path: inset(10% 0 85% 0); } 100% { clip-path: inset(75% 0 10% 0); }
+         }
+         @keyframes glitch-anim-2 {
+             0% { clip-path: inset(70% 0 15% 0); } 20% { clip-path: inset(5% 0 90% 0); } 40% { clip-path: inset(45% 0 35% 0); } 60% { clip-path: inset(25% 0 60% 0); } 80% { clip-path: inset(90% 0 2% 0); } 100% { clip-path: inset(15% 0 75% 0); }
+         }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="py-6 px-4 md:px-8 sticky top-0 bg-[#0c0c0c] bg-opacity-90 backdrop-blur-sm z-50 border-b border-gray-800 border-opacity-50">
+        <div class="container mx-auto max-w-5xl">
+            <a href="/" class="glitch" data-text="FI">FI</a>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto max-w-3xl px-4 py-12 md:py-16">
+
+        <h1>Privacy & Cookie Policy for injoque.dev</h1>
+        <p><strong>Last Updated:</strong> [Enter Date, e.g., May 6, 2025]</p>
+
+        <h2>1. Introduction</h2>
+        <p>Welcome to the personal portfolio website of Fernando Injoque (<a href="https://injoque.dev/">injoque.dev</a>). This Privacy & Cookie Policy explains how Fernando Injoque ("I", "me", "my") collects, uses, shares, and protects information obtained from visitors ("you") to this website.</p>
+        <p>Protecting your privacy is important to me. This policy outlines the types of data collected, including through our custom analytics system and third-party services, the purposes for processing that data, the legal basis for doing so, and your rights regarding your personal information.</p>
+        <p>By using this website after being presented with the cookie consent banner, you acknowledge the practices described in this policy.</p>
+
+        <h2>2. Data Controller</h2>
+        <p>The data controller responsible for the processing of personal data collected through this website is:</p>
+        <p>
+            Fernando Injoque<br>
+            Lima, Peru<br>
+            Contact Email: <a href="mailto:github@injoque.dev">[github@injoque.dev]</a> </p>
+
+        <h2>3. Information We Collect</h2>
+        <p>I collect information to understand website usage, improve user experience, ensure security, and respond to inquiries. The types of information collected include:</p>
+
+        <h3>a) Information Collected via Custom Analytics (Subject to Your Consent):</h3>
+        <p>When you consent to analytics tracking via our cookie banner, the following information may be collected and processed:</p>
+        <ul>
+            <li><strong>Event Type:</strong> The specific action taken (e.g., `page_view`, `section_view`, `click`, `hover`).</li>
+            <li><strong>Event Details (`payload`):</strong> Contextual data associated with the event, stored in a structured format (JSONB). This may include: URL visited, page title, page pathname, section viewed, element interacted with, text content of the element, target URL of clicked links, UTM Parameters (source, medium, campaign, term, content) from the URL if present, and the timestamp of the event.</li>
+            <li><strong>Session ID:</strong> A randomly generated unique identifier stored in `sessionStorage` used solely to link together events occurring during a single browsing session. This ID is temporary and is cleared when you close your browser tab/window.</li>
+            <li><strong>IP Address:</strong> Your Internet Protocol address. Collected for approximate unique visitor counting and GeoIP lookups (see below). Stored with event logs.</li>
+            <li><strong>User Agent:</strong> Information about your browser type, version, and operating system.</li>
+            <li><strong>Referrer URL:</strong> The address of the webpage you came from before visiting this site.</li>
+            <li><strong>Device Information:</strong> Screen width and height, browser viewport width and height.</li>
+            <li><strong>Browser Information:</strong> Preferred language, inferred timezone.</li>
+        </ul>
+
+        <h3>b) Information Collected via Contact Form:</h3>
+        <p>If you use the contact form, I collect: Your Name, Your Email Address, Your Message Content. This information is processed via Formspree.</p>
+
+        <h3>c) Information Collected for Security (reCAPTCHA):</h3>
+        <p>This website uses Google reCAPTCHA v3 on the contact form to protect against spam. reCAPTCHA collects hardware/software information and sends it to Google for analysis. This operates under Google's Privacy Policy and Terms of Service.</p>
+
+        <h2>4. How We Use Your Information</h2>
+        <p>The information collected is used for:</p>
+        <ul>
+            <li><strong>Website Analytics:</strong> To understand usage patterns, identify popular content, analyze traffic sources, understand general demographics (browser, device, location), and generate reports to improve the site.</li>
+            <li><strong>AI-Driven Insights:</strong> Aggregated, anonymized analytics summaries (not individual logs) may be sent weekly to OpenAI API to generate high-level insights on usage patterns.</li>
+            <li><strong>GeoIP Location:</strong> To determine approximate visitor location (country, region, city) using ipinfo.io for aggregated audience analysis.</li>
+            <li><strong>Security:</strong> Using Google reCAPTCHA v3 to protect the contact form.</li>
+            <li><strong>Communication:</strong> To respond to contact form inquiries.</li>
+            <li><strong>Functionality:</strong> To ensure the website works correctly.</li>
+        </ul>
+
+        <h2>5. Legal Basis for Processing (GDPR)</h2>
+        <p>If you are in the EEA, the legal bases are:</p>
+        <ul>
+            <li><strong>Consent:</strong> For analytics data collection (section 3a) via the cookie banner. You can withdraw consent.</li>
+            <li><strong>Legitimate Interests:</strong> For Google reCAPTCHA v3 (website security).</li>
+            <li><strong>Contractual Necessity / Legitimate Interests:</strong> For contact form submissions (responding to your request).</li>
+        </ul>
+
+        <h2>6. Cookies, Session Storage, and Similar Technologies</h2>
+        <ul>
+            <li><strong>Cookies (Google reCAPTCHA):</strong> Sets essential/functional cookies (e.g., `_GRECAPTCHA`) for security. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>.</li>
+            <li><strong>Session Storage (`sessionId`):</strong> Used for analytics (requires consent). Not a cookie; temporary storage cleared on browser close. Categorized as **Analytics/Performance**.</li>
+        </ul>
+        <p>Manage consent via the cookie banner or browser settings.</p>
+
+        <h2>7. Data Sharing and Third Parties</h2>
+        <p>I do not sell your personal information. Information is shared with these service providers:</p>
+        <ul>
+            <li><strong>Supabase:</strong> Backend infrastructure (database, Edge Functions). <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+            <li><strong>GitHub Pages:</strong> Static site hosting. <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener noreferrer">Privacy Statement</a></li>
+            <li><strong>Google (reCAPTCHA):</strong> Spam protection. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> | <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a></li>
+            <li><strong>Formspree:</strong> Contact form processing. <a href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+            <li><strong>OpenAI:** AI analysis of aggregated data summaries. <a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+            <li><strong>Resend:** Sending automated reports. <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+            <li><strong>ipinfo.io (If GeoIP is enabled):** Geolocation lookups. <a href="https://ipinfo.io/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+        </ul>
+        <p>These parties may process data outside your region. I rely on their data protection commitments.</p>
+
+        <h2>8. Data Retention</h2>
+        <ul>
+            <li><strong>Analytics Data:** Raw event logs retained for [Specify Period, e.g., 12 months], then deleted or anonymized. Aggregated data kept indefinitely.</li>
+            <li><strong>Contact Form Submissions:** Retained as needed for response/records, typically [Specify Period, e.g., 24 months], unless legally required longer.</li>
+            <li><strong>Session Storage (`sessionId`):** Cleared on browser/tab close.</li>
+        </ul>
+
+        <h2>9. Data Security</h2>
+        <p>Reasonable technical and organizational measures are taken, including using reputable providers and secure connections (HTTPS). However, absolute security cannot be guaranteed.</p>
+
+        <h2>10. Your Data Protection Rights</h2>
+        <p>Depending on your location (e.g., EEA, Peru), you may have rights to access, rectify, erase, restrict, object to processing, data portability, and withdraw consent. To exercise these rights, contact me at <a href="mailto:github@injoque.dev">[github@injoque.dev]</a> . You may also lodge a complaint with your local data protection authority.</p>
+
+        <h2>11. Children's Privacy</h2>
+        <p>This site is not intended for children under 13 (or 16). I do not knowingly collect their data. Contact me if you believe a child has provided information.</p>
+
+        <h2>12. Changes to This Policy</h2>
+        <p>Updates will be posted here with a new "Last Updated" date. Please review periodically.</p>
+
+        <h2>13. Contact Information</h2>
+        <p>Questions? Contact me:</p>
+        <p>
+            Fernando Injoque<br>
+            Email: <a href="mailto:github@injoque.dev">[github@injoque.dev]</a> </p>
+
+    </main>
+
+    <footer class="py-6 px-4 md:px-8 mt-12 border-t border-gray-800 border-opacity-50 text-center text-sm text-[#aaaaaa]">
+        <div class="container mx-auto max-w-5xl">
+             <p>&copy; 2025 Fernando Injoque. | <a href="/" class="hover:text-[#eaeaea]">Back to Home</a></p>
+        </div>
+    </footer>
+
+</body>
+</html>
