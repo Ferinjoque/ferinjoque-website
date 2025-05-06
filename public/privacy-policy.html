@@ -18,25 +18,24 @@
     <link rel="manifest" href="/site.webmanifest">
 
     <style>
-        /* Basic styles to match theme */
+        /* Basic styles to match theme - REMOVED MARGINS FOR H/P */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0c0c0c; /* Dark background */
             color: #eaeaea; /* Light text */
         }
-        /* Style headings and links to match theme */
+        /* Keep heading font styles */
         h1, h2, h3 {
             color: #ffffff; /* White headings */
             font-weight: 600; /* Semibold */
-            margin-bottom: 2em; /* Spacing below headings */
-            margin-top: 1.25em; /* Spacing above headings */
         }
-        h1 { font-size: 2.25rem; line-height: 2.5rem; margin-top: 0; } /* 36px */
+        h1 { font-size: 2.25rem; line-height: 2.5rem; } /* 36px */
         h2 { font-size: 1.5rem; line-height: 2rem; } /* 24px */
         h3 { font-size: 1.25rem; line-height: 1.75rem; } /* 20px */
+
+        /* Keep paragraph line height and color */
         p {
             line-height: 1.6;
-            margin-bottom: 2em;
             color: #aaaaaa; /* Muted text color */
         }
         a {
@@ -47,14 +46,10 @@
         a:hover {
             color: #81C784; /* Lighter green on hover */
         }
+        /* Keep basic list styling */
         ul {
             list-style: disc;
-            margin-left: 1.5em;
-            margin-bottom: 1em;
             color: #aaaaaa;
-        }
-        li {
-            margin-bottom: 0.5em;
         }
         strong {
              color: #eaeaea; /* Slightly brighter text for emphasis */
@@ -62,47 +57,33 @@
         }
         hr {
              border-color: rgba(255, 255, 255, 0.1);
-             margin-top: 2em;
-             margin-bottom: 2em;
         }
         /* Basic Glitch for Logo */
          .glitch {
              position: relative;
-             color: #eaeaea; /* --color-text */
+             color: #eaeaea;
              text-decoration: none;
              font-size: 1.75rem;
              font-weight: 700;
-             display: inline-block; /* Needed for positioning */
+             display: inline-block;
          }
          .glitch::before,
          .glitch::after {
              content: attr(data-text);
-             position: absolute;
-             top: 0;
-             left: 0;
-             width: 100%;
-             height: 100%;
-             background: #0c0c0c; /* --color-bg */
-             overflow: hidden;
+             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+             background: #0c0c0c; overflow: hidden;
              clip-path: inset(50% 50% 50% 50%);
          }
          .glitch:hover::before {
-             left: 2px;
-             text-shadow: -1px 0 #4CAF50; /* --color-primary */
+             left: 2px; text-shadow: -1px 0 #4CAF50;
              animation: glitch-anim-1 2s infinite linear alternate-reverse;
          }
           .glitch:hover::after {
-             left: -2px;
-             text-shadow: 1px 0 #3F51B5; /* --color-accent */
+             left: -2px; text-shadow: 1px 0 #3F51B5;
              animation: glitch-anim-2 3s infinite linear alternate-reverse;
          }
-
-         @keyframes glitch-anim-1 {
-             0% { clip-path: inset(15% 0 70% 0); } 20% { clip-path: inset(80% 0 5% 0); } 40% { clip-path: inset(30% 0 40% 0); } 60% { clip-path: inset(55% 0 20% 0); } 80% { clip-path: inset(10% 0 85% 0); } 100% { clip-path: inset(75% 0 10% 0); }
-         }
-         @keyframes glitch-anim-2 {
-             0% { clip-path: inset(70% 0 15% 0); } 20% { clip-path: inset(5% 0 90% 0); } 40% { clip-path: inset(45% 0 35% 0); } 60% { clip-path: inset(25% 0 60% 0); } 80% { clip-path: inset(90% 0 2% 0); } 100% { clip-path: inset(15% 0 75% 0); }
-         }
+         @keyframes glitch-anim-1 { 0% { clip-path: inset(15% 0 70% 0); } 20% { clip-path: inset(80% 0 5% 0); } 40% { clip-path: inset(30% 0 40% 0); } 60% { clip-path: inset(55% 0 20% 0); } 80% { clip-path: inset(10% 0 85% 0); } 100% { clip-path: inset(75% 0 10% 0); } }
+         @keyframes glitch-anim-2 { 0% { clip-path: inset(70% 0 15% 0); } 20% { clip-path: inset(5% 0 90% 0); } 40% { clip-path: inset(45% 0 35% 0); } 60% { clip-path: inset(25% 0 60% 0); } 80% { clip-path: inset(90% 0 2% 0); } 100% { clip-path: inset(15% 0 75% 0); } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -116,14 +97,14 @@
     <main class="flex-grow container mx-auto max-w-3xl px-4 py-12 md:py-16">
 
         <h1>Privacy & Cookie Policy for injoque.dev</h1>
-        <p><strong>Last Updated:</strong> May 6, 2025</p>
+        <p class="mb-6"><strong>Last Updated:</strong> May 6, 2025</p>
     
-        <h2>1. Introduction</h2>
-        <p>Welcome to the personal portfolio website of Fernando Injoque (injoque.dev). This Privacy & Cookie Policy explains how Fernando Injoque ("I", "me", "my") collects, uses, shares, and protects information obtained from visitors ("you") to this website.</p>
-        <p>Protecting your privacy is important to me. This policy outlines the types of data collected, including through our custom analytics system and third-party services, the purposes for processing that data, the legal basis for doing so, and your rights regarding your personal information.</p>
-        <p>By using this website after being presented with the cookie consent banner, you acknowledge the practices described in this policy.</p>
+        <h2 class="mt-8 mb-5">1. Introduction</h2>
+        <p class="mb-3">Welcome to the personal portfolio website of Fernando Injoque (injoque.dev). This Privacy & Cookie Policy explains how Fernando Injoque ("I", "me", "my") collects, uses, shares, and protects information obtained from visitors ("you") to this website.</p>
+        <p class="mb-3">Protecting your privacy is important to me. This policy outlines the types of data collected, including through our custom analytics system and third-party services, the purposes for processing that data, the legal basis for doing so, and your rights regarding your personal information.</p>
+        <p class="mb-3">By using this website after being presented with the cookie consent banner, you acknowledge the practices described in this policy.</p>
     
-        <h2>2. Data Controller</h2>
+        <h2 class="mb-6">2. Data Controller</h2>
         <p>The data controller responsible for the processing of personal data collected through this website is:</p>
         <p>• Fernando Injoque<br>
         • Lima, Peru<br>
