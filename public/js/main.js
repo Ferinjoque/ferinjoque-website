@@ -1,304 +1,526 @@
 import { trackEvent } from './tracker.js';
 
-(() => {
-  // ———————— DOM ELEMENTS ————————
-  const header         = document.querySelector('header');
-  const menuToggle     = document.querySelector('.menu-toggle');
-  const navLinks       = document.querySelector('.nav-links');
-  const themeToggle    = document.querySelector('.theme-toggle'); // placeholder if you add theme logic
-  const sections       = document.querySelectorAll('section');
-  const navSections    = document.querySelectorAll('section[id]');
-  const contactForm    = document.getElementById('contactForm');
-  const contactSection = document.getElementById('contact');
+// DOM Elements
+const header = document.querySelector('header');
+const menuToggle = document.querySelector('.menu-toggle');
+const navLinks = document.querySelector('.nav-links');
+const themeToggle = document.querySelector('.theme-toggle');
+const sections = document.querySelectorAll('section');
+const navSections  = document.querySelectorAll('section[id]');
+const contactForm = document.getElementById('contactForm');
 
-  // ———————— reCAPTCHA ON-DEMAND ————————
-  let recaptchaLoaded = false;
-  if (contactSection) {
-    const recaptchaObserver = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
+const contactSection = document.getElementById('contact');
+let recaptchaLoaded = false; // Flag to prevent multiple loads
+
+const loadRecaptcha = (entries, observer) => {
+    entries.forEach(entry => {
+        // Check if the contact section is intersecting (visible) and script hasn't loaded
         if (entry.isIntersecting && !recaptchaLoaded) {
-          recaptchaLoaded = true;
-          const script = document.createElement('script');
-          script.src   = 'https://www.google.com/recaptcha/api.js?render=6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v';
-          script.defer = true;
-          document.head.appendChild(script);
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { rootMargin: '0px', threshold: 0.2 });
-    recaptchaObserver.observe(contactSection);
-  }
+            console.log("DEBUG: Contact section visible, loading reCAPTCHA...");
+            recaptchaLoaded = true; // Set flag
 
-  // ———————— UTM PARAMS PARSER ————————
-  const getUtmParams = () => {
-    const p = new URLSearchParams(window.location.search);
-    return {
-      utm_source:  p.get('utm_source'),
-      utm_medium:  p.get('utm_medium'),
-      utm_campaign:p.get('utm_campaign'),
-      utm_term:    p.get('utm_term'),
-      utm_content: p.get('utm_content'),
+            // Create the script element
+            const script = document.createElement('script');
+            // IMPORTANT: Replace YOUR_SITE_KEY with your actual reCAPTCHA v3 Site Key
+            script.src = 'https://www.google.com/recaptcha/api.js?render=6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v';
+            script.defer = true; // Use defer
+            // script.async = true; // Alternatively use async
+
+            // Append to head or body
+            document.head.appendChild(script); // Appending to head is common
+
+            // Stop observing once loaded
+            observer.unobserve(contactSection);
+        }
+    });
+};
+
+// Only set up observer if contact section exists
+if (contactSection) {
+    const observerOptions = {
+        rootMargin: '0px', // Trigger as soon as it enters viewport
+        threshold: 0.1 // Trigger when 10% is visible
     };
-  };
+    const observer = new IntersectionObserver(loadRecaptcha, observerOptions);
+    observer.observe(contactSection);
+}
 
-  // ———————— SCROLL EFFECTS ————————
-  const highlightActiveSection = () => {
-    const offset = window.scrollY + 100;
-    sections.forEach(sec => {
-      const top = sec.offsetTop;
-      const bottom = top + sec.offsetHeight;
-      if (offset >= top && offset < bottom) {
-        document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-        const link = document.querySelector(`.nav-links a[href="#${sec.id}"]`);
-        if (link) link.classList.add('active');
-      }
-    });
-  };
+// Helper function to parse UTM parameters from URL
+function getUtmParams() {
+    const params = new URLSearchParams(location.search);
+    return {
+        utm_source: params.get('utm_source'),
+        utm_medium: params.get('utm_medium'),
+        utm_campaign: params.get('utm_campaign'),
+        utm_term: params.get('utm_term'),
+        utm_content: params.get('utm_content'),
+    };
+}
 
-  const animateOnScroll = () => {
-    document.querySelectorAll('.project-card, .timeline-item, .skill-category')
-      .forEach(el => {
-        if (el.getBoundingClientRect().top < window.innerHeight * 0.9) {
-          el.classList.add('fadeIn');
-        }
-      });
-  };
-
-  window.addEventListener('scroll', () => {
-    header.classList.toggle('scrolled', window.scrollY > 50);
+// Scroll handler for header effects
+window.addEventListener('scroll', () => {
+    // Add scrolled class to header when scrolled down
+    if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+    } else {
+        header.classList.remove('scrolled');
+    }
+    
+    // Highlight active section in navigation
     highlightActiveSection();
+    
+    // Animate elements when they come into view
     animateOnScroll();
-  });
+});
 
-  // ———————— MOBILE MENU TOGGLE ————————
-  menuToggle.addEventListener('click', () => {
+// Mobile menu toggle
+menuToggle.addEventListener('click', () => {
     navLinks.classList.toggle('active');
-    document.querySelectorAll('.bar').forEach((bar, i) => {
-      bar.classList.toggle('active');
-      if (navLinks.classList.contains('active')) {
-        if (i === 0) bar.style.transform = 'rotate(-45deg) translate(-5px,6px)';
-        if (i === 1) bar.style.opacity   = '0';
-        if (i === 2) bar.style.transform = 'rotate(45deg) translate(-5px,-6px)';
-      } else {
-        bar.style.transform = '';
-        bar.style.opacity   = '';
-      }
-    });
-  });
+    
+    // Animate hamburger icon
+    const bars = document.querySelectorAll('.bar');
+    bars.forEach(bar => bar.classList.toggle('active'));
+    
+    if (navLinks.classList.contains('active')) {
+        bars[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+        bars[1].style.opacity = '0';
+        bars[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+    } else {
+        bars[0].style.transform = 'none';
+        bars[1].style.opacity = '1';
+        bars[2].style.transform = 'none';
+    }
+});
 
-  navLinks.addEventListener('click', e => {
+// Close mobile menu when clicking a nav link
+navLinks.addEventListener('click', (e) => {
     if (e.target.tagName === 'A') {
-      navLinks.classList.remove('active');
-      document.querySelectorAll('.bar').forEach(bar => {
-        bar.style.transform = '';
-        bar.style.opacity   = '';
-      });
+        navLinks.classList.remove('active');
+        
+        // Reset hamburger icon
+        const bars = document.querySelectorAll('.bar');
+        bars[0].style.transform = 'none';
+        bars[1].style.opacity = '1';
+        bars[2].style.transform = 'none';
     }
-  });
+});
 
-  // ———————— INITIAL LOAD ANIMATIONS ————————
-  window.addEventListener('DOMContentLoaded', () => {
-    animateOnScroll();
-    document.querySelectorAll('.hero h1, .hero h2, .hero-description, .cta-container')
-      .forEach((el, i) => el.classList.add('fadeIn', `delay-${i+1}`));
-  });
-
-  // ———————— CONTACT FORM + reCAPTCHA V3 ————————
-  if (contactForm) {
-    contactForm.addEventListener('submit', async e => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(contactForm));
-      if (!data.name || !data.email || !data.message) {
-        return showFormMessage('Please fill in all fields.', 'error');
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-        return showFormMessage('Please enter a valid email address.', 'error');
-      }
-      if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
-        return showFormMessage('reCAPTCHA not yet loaded. Try again shortly.', 'error');
-      }
-      try {
-        const token = await new Promise(res =>
-          grecaptcha.ready(() =>
-            grecaptcha.execute('6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v', { action: 'contact' }).then(res)
-          )
-        );
-        const formData = new FormData(contactForm);
-        formData.append('g-recaptcha-response', token);
-
-        const resp = await fetch('https://formspree.io/f/xblgnwdw', {
-          method:  'POST',
-          headers: { 'Accept': 'application/json' },
-          body:    formData
-        });
-        const json = await resp.json();
-        if (json.ok) {
-          showFormMessage('Message sent! I’ll get back to you soon.', 'success');
-          contactForm.reset();
-        } else {
-          const msg = json.errors?.map(e => e.message).join(', ') || 'Something went wrong.';
-          showFormMessage(msg, 'error');
+// Function to highlight active section in navigation
+function highlightActiveSection() {
+    let scrollPosition = window.scrollY + 100;
+    
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+        
+        if (
+            scrollPosition >= sectionTop && 
+            scrollPosition < sectionTop + sectionHeight
+        ) {
+            // Remove active class from all links
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Add active class to current section link
+            const activeLink = document.querySelector(`.nav-links a[href="#${sectionId}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
         }
-      } catch (err) {
-        console.error(err);
-        showFormMessage('Network error. Please try later.', 'error');
-      }
     });
-  }
+}
 
-  function showFormMessage(msg, type) {
-    document.querySelector('.form-message')?.remove();
-    const div = document.createElement('div');
-    div.className = `form-message ${type === 'error' ? 'form-error' : 'form-success'}`;
-    div.textContent = msg;
-    contactForm.parentNode.appendChild(div);
+// Function to animate elements when they come into view
+function animateOnScroll() {
+    const animateElements = document.querySelectorAll('.project-card, .timeline-item, .skill-category');
+    
+    animateElements.forEach(el => {
+        const elementPosition = el.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        
+        if (elementPosition < windowHeight * 0.9) {
+            el.classList.add('fadeIn');
+        }
+    });
+}
+
+if (contactForm) {
+  contactForm.addEventListener('submit', e => {
+    e.preventDefault();
+
+    // collect & validate
+    const data = Object.fromEntries(new FormData(contactForm));
+    if (!data.name || !data.email || !data.message) {
+      showFormMessage('Please fill in all fields', 'error');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      showFormMessage('Please enter a valid email address', 'error');
+      return;
+    }
+
+    if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
+        showFormMessage('reCAPTCHA not loaded yet. Please wait a moment and try again.', 'error');
+        console.error("reCAPTCHA object not ready.");
+        return;
+    }
+
+    // run recaptcha v3
+    grecaptcha.ready(() => {
+      grecaptcha.execute('6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v', { action: 'contact' })
+        .then(token => {
+          // append the recaptcha response
+          const formData = new FormData(contactForm);
+          formData.append('g-recaptcha-response', token);
+
+          // post to Formspree
+          fetch('https://formspree.io/f/xblgnwdw', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData
+          })
+          .then(res => res.json())
+          .then(json => {
+            if (json.ok) {
+              showFormMessage(
+                'Message sent! I’ll get back to you soon.',
+                'success'
+              );
+              contactForm.reset();
+            } else {
+              // Formspree returns errors in json.errors
+              const msg = json.errors
+                ? json.errors.map(e => e.message).join(', ')
+                : 'Oops! Something went wrong.';
+              showFormMessage(msg, 'error');
+            }
+          })
+          .catch(() => {
+            showFormMessage(
+              'Network error. Please try again later.',
+              'error'
+            );
+          });
+        });
+    });
+  });
+}
+
+// Function to display form submission messages
+function showFormMessage(message, type) {
+    // Remove any existing message
+    const existingMessage = document.querySelector('.form-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create message element
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('form-message');
+    messageElement.classList.add(type === 'error' ? 'form-error' : 'form-success');
+    messageElement.textContent = message;
+    
+    // Add to the DOM after the form
+    contactForm.parentNode.appendChild(messageElement);
+    
+    // Auto-remove after 5 seconds
     setTimeout(() => {
-      div.classList.add('fade-out');
-      setTimeout(() => div.remove(), 300);
+        messageElement.classList.add('fade-out');
+        setTimeout(() => {
+            messageElement.remove();
+        }, 300);
     }, 5000);
-  }
+}
 
-  // ———————— LEAF-TRAIL MOUSE EFFECT ————————
-  const createLeafTrail = () => {
-    const colors = ['#4CAF50','#388E3C','#81C784','#C8E6C9'];
-    document.addEventListener('mousemove', e => {
-      const leaf = document.createElement('div');
-      leaf.className = 'leaf-trail';
-      Object.assign(leaf.style, {
-        left:  `${e.pageX}px`,
-        top:   `${e.pageY}px`,
-        width: `${Math.random()*10+5}px`,
-        height:`${Math.random()*10+5}px`,
-        opacity:`${Math.random()*0.3+0.1}`,
-        backgroundColor: colors[Math.floor(Math.random()*colors.length)],
-        transform: `rotate(${Math.random()*360}deg)`,
-      });
-      document.body.appendChild(leaf);
-      setTimeout(() => {
-        leaf.style.opacity = '0';
-        leaf.style.transform = `translate(${Math.random()*20-10}px, ${Math.random()*20+10}px)`;
-        setTimeout(() => leaf.remove(), 500);
-      }, 100);
+// Add a leaf cursor trail effect for sustainability theme
+function createLeafTrail() {
+    const colors = ['#4CAF50', '#388E3C', '#81C784', '#C8E6C9'];
+    
+    document.addEventListener('mousemove', function(e) {
+        const leaf = document.createElement('div');
+        leaf.className = 'leaf-trail';
+        leaf.style.left = e.pageX + 'px';
+        leaf.style.top = e.pageY + 'px';
+        
+        // Randomize leaf properties for variety
+        const size = Math.random() * 10 + 5;
+        const opacity = Math.random() * 0.3 + 0.1;
+        const rotationAngle = Math.random() * 360;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        leaf.style.width = size + 'px';
+        leaf.style.height = size + 'px';
+        leaf.style.opacity = opacity;
+        leaf.style.backgroundColor = color;
+        leaf.style.transform = `rotate(${rotationAngle}deg)`;
+        
+        document.body.appendChild(leaf);
+        
+        // Animate and remove the leaf
+        setTimeout(() => {
+            leaf.style.opacity = '0';
+            leaf.style.transform = `translate(${Math.random() * 20 - 10}px, ${Math.random() * 20 + 10}px) rotate(${rotationAngle + 20}deg)`;
+            
+            setTimeout(() => {
+                document.body.removeChild(leaf);
+            }, 500);
+        }, 100);
     });
-  };
-  createLeafTrail();
+}
 
-  // ———————— LEAF-TRAIL & LOADER CSS ————————
-  const style = document.createElement('style');
-  style.innerHTML = `
+// Initialize the leaf trail effect
+createLeafTrail();
+
+// Add CSS for the leaf trail effect
+const leafTrailStyle = document.createElement('style');
+leafTrailStyle.innerHTML = `
     .leaf-trail {
-      position: absolute; border-radius: 2px;
-      pointer-events: none; z-index: 9999;
-      transition: opacity 0.5s, transform 0.5s;
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        background-color: var(--color-primary);
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.2;
+        transition: opacity 0.5s, transform 0.5s;
     }
+    
     .form-message {
-      padding:10px; margin-top:15px;
-      border-radius:4px; transition:opacity 0.3s;
+        padding: 10px;
+        margin-top: 15px;
+        border-radius: 4px;
+        opacity: 1;
+        transition: opacity 0.3s;
     }
+    
     .form-success {
-      background:rgba(76,175,80,0.1);
-      border:1px solid var(--color-primary);
-      color:var(--color-primary-light);
+        background-color: rgba(76, 175, 80, 0.1);
+        border: 1px solid var(--color-primary);
+        color: var(--color-primary-light);
     }
+    
     .form-error {
-      background:rgba(244,67,54,0.1);
-      border:1px solid #f44336; color:#e57373;
+        background-color: rgba(244, 67, 54, 0.1);
+        border: 1px solid #f44336;
+        color: #e57373;
     }
-    .fade-out { opacity:0; }
-  `;
-  document.head.appendChild(style);
+    
+    .fade-out {
+        opacity: 0;
+    }
+`;
+document.head.appendChild(leafTrailStyle);
 
-  // ———————— SUSTAINABLE LOADER ————————
-  const createSustainableLoader = () => {
+// Call initial animations on page load
+window.addEventListener('DOMContentLoaded', () => {
+    // Animate elements that are already visible
+    animateOnScroll();
+    
+    // Add fadeIn animations to hero content
+    const heroElements = document.querySelectorAll('.hero h1, .hero h2, .hero-description, .cta-container');
+    heroElements.forEach((el, index) => {
+        el.classList.add('fadeIn');
+        el.classList.add(`delay-${index + 1}`);
+    });
+});
+
+// Create sustainable loading effect
+function createSustainableLoader() {
     const loader = document.createElement('div');
     loader.className = 'sustainable-loader';
-    loader.innerHTML = `
-      <div class="loader-content">
-        <div class="loader-leaf"><span class="material-icons">eco</span></div>
-        <div class="loader-text">Loading<span class="dot-1">.</span><span class="dot-2">.</span><span class="dot-3">.</span></div>
-        <div class="loader-message">This site is optimized for minimal energy consumption</div>
-      </div>`;
+    
+    const loaderContent = document.createElement('div');
+    loaderContent.className = 'loader-content';
+    
+    // Add leaf icon
+    const leafIcon = document.createElement('div');
+    leafIcon.className = 'loader-leaf';
+    leafIcon.innerHTML = '<span class="material-icons">eco</span>';
+    
+    // Add loading text
+    const loadingText = document.createElement('div');
+    loadingText.className = 'loader-text';
+    loadingText.innerHTML = 'Loading<span class="dot-1">.</span><span class="dot-2">.</span><span class="dot-3">.</span>';
+    
+    // Add sustainability message
+    const sustainabilityMessage = document.createElement('div');
+    sustainabilityMessage.className = 'loader-message';
+    sustainabilityMessage.textContent = 'This site is optimized for minimal energy consumption';
+    
+    loaderContent.appendChild(leafIcon);
+    loaderContent.appendChild(loadingText);
+    loaderContent.appendChild(sustainabilityMessage);
+    loader.appendChild(loaderContent);
+    
     document.body.appendChild(loader);
-
-    const ls = document.createElement('style');
-    ls.innerHTML = `
-      .sustainable-loader {
-        position:fixed;top:0;left:0;width:100%;height:100%;
-        background:var(--color-bg);display:flex;
-        justify-content:center;align-items:center;
-        z-index:9999;transition:opacity 0.5s;
-      }
-      .loader-content { text-align:center; }
-      .loader-leaf { font-size:3rem;animation:pulse 1.5s infinite; }
-      .loader-text { margin-top:1rem;font-weight:500; }
-      .loader-message { margin-top:1rem;font-size:0.875rem;max-width:250px; }
-      @keyframes pulse {0%{transform:scale(1)}50%{transform:scale(1.1);opacity:0.7}100%{transform:scale(1)}}
-      .dot-1,.dot-2,.dot-3{animation:dots 1.5s infinite;opacity:0;}
-      .dot-2{animation-delay:0.5s}.dot-3{animation-delay:1s}
-      @keyframes dots{0%,100%{opacity:0}50%{opacity:1}}
+    
+    // Add loading animation styles
+    const loaderStyle = document.createElement('style');
+    loaderStyle.innerHTML = `
+        .sustainable-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        
+        .loader-content {
+            text-align: center;
+        }
+        
+        .loader-leaf {
+            font-size: 3rem;
+            color: var(--color-primary);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        
+        .loader-text {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+        
+        .loader-message {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+            max-width: 250px;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .dot-1, .dot-2, .dot-3 {
+            animation: dots 1.5s infinite;
+            opacity: 0;
+        }
+        
+        .dot-2 {
+            animation-delay: 0.5s;
+        }
+        
+        .dot-3 {
+            animation-delay: 1s;
+        }
+        
+        @keyframes dots {
+            0%, 100% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
     `;
-    document.head.appendChild(ls);
-
+    document.head.appendChild(loaderStyle);
+    
+    // Hide loader after page is fully loaded
     window.addEventListener('load', () => {
-      setTimeout(() => {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 500);
-      }, 1500);
+        setTimeout(() => {
+            loader.style.opacity = '0';
+            loader.style.visibility = 'hidden';
+            
+            // Remove loader after transition
+            setTimeout(() => {
+                document.body.removeChild(loader);
+            }, 500);
+        }, 1500); // Show loader for at least 1.5 seconds for effect
     });
-  };
-  createSustainableLoader();
+}
 
-  // ———————— COOKIEYES & CUSTOM ANALYTICS ————————
-  let analyticsInited = false;
-
-  function initAnalytics() {
-    if (analyticsInited) return;
-    console.debug('Analytics: initializing');
-
-    // 1) Page view
-    window.addEventListener('load', () =>
-      trackEvent('page_view', {
-        ...getUtmParams(),
+// 1) Page view on load
+window.addEventListener('load', () => {
+    const utmData = getUtmParams(); // Get UTM data
+    const pageViewData = {
+        // Original data
         url: location.href,
         title: document.title,
-        timestamp: Date.now()
-      }), { once: true }
-    );
+        timestamp: Date.now(),
 
-    // 2) Section views
-    new IntersectionObserver((entries, obs) => {
-      entries.forEach(en => {
-        if (en.isIntersecting) {
-          trackEvent('section_view', { section: en.target.id, timestamp: Date.now() });
-          obs.unobserve(en.target);
+        // --- NEW DATA POINTS ---
+        referrer: document.referrer || null, // Use null if no referrer
+        screen_width: screen.width,
+        screen_height: screen.height,
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        browser_language: navigator.language,
+        browser_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        pathname: location.pathname,
+
+        // UTM parameters (will be null if not present in URL)
+        utm_source: utmData.utm_source,
+        utm_medium: utmData.utm_medium,
+        utm_campaign: utmData.utm_campaign,
+        utm_term: utmData.utm_term,
+        utm_content: utmData.utm_content,
+        // --- END NEW DATA POINTS ---
+    };
+
+    console.log("DEBUG: Tracking page_view with data:", pageViewData); // Optional: Log data being sent
+    trackEvent('page_view', pageViewData);
+});
+
+// 2) Track section impressions via IntersectionObserver
+const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            trackEvent('section_view', {
+                section: entry.target.id,
+                timestamp: Date.now(),
+            });
+            io.unobserve(entry.target);
         }
-      });
-    }, { threshold: 0.5 }).observe(document.body);
-
-    // 3) Clicks
-    document.addEventListener('click', e => {
-      const el = e.target.closest('a,button');
-      if (!el) return;
-      trackEvent('click', {
-        tag: el.tagName, text: el.textContent.trim().slice(0,50),
-        href: el.href, timestamp: Date.now()
-      });
     });
+}, { threshold: 0.5 });
 
-    analyticsInited = true;
-  }
+navSections.forEach(sec => io.observe(sec));
 
-  function checkConsent() {
-    if (window.CookieYes?.getConsent) {
-      const consent = window.CookieYes.getConsent();
-      if (consent.statistics) initAnalytics();
-      else console.debug('Analytics consent denied');
-    } else {
-      console.debug('CookieYes API not ready');
-    }
-  }
+// 3) Track clicks on all links & buttons
+document.addEventListener('click', e => {
+    const el = e.target.closest('a, button');
+    if (!el) return;
+    trackEvent('click', {
+        tag: el.tagName.toLowerCase(),
+        text: el.innerText.trim().slice(0,50),
+        href: el.href || null,
+        timestamp: Date.now(),
+    });
+});
 
-  window.addEventListener('DOMContentLoaded', checkConsent);
-  window.addEventListener('cookieyes_consent_update', checkConsent);
+// 4) Track hovers on any element with data-track-hover attribute
+document.querySelectorAll('[data-track-hover]').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+        trackEvent('hover', {
+            element: el.dataset.trackHover,
+            timestamp: Date.now(),
+        });
+    });
+});
 
-})();
+
+// Initialize the sustainable loader
+createSustainableLoader();
