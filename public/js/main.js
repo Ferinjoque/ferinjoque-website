@@ -8,9 +8,10 @@ const themeToggle = document.querySelector('.theme-toggle');
 const sections = document.querySelectorAll('section');
 const navSections  = document.querySelectorAll('section[id]');
 const contactForm = document.getElementById('contactForm');
-
 const contactSection = document.getElementById('contact');
-let recaptchaLoaded = false; // Flag to prevent multiple loads
+
+let customAnalyticsInitialized = false;
+let recaptchaLoaded = false;
 
 const loadRecaptcha = (entries, observer) => {
     entries.forEach(entry => {
@@ -45,17 +46,227 @@ if (contactSection) {
     observer.observe(contactSection);
 }
 
-// Helper function to parse UTM parameters from URL
-function getUtmParams() {
-    const params = new URLSearchParams(location.search);
-    return {
-        utm_source: params.get('utm_source'),
-        utm_medium: params.get('utm_medium'),
-        utm_campaign: params.get('utm_campaign'),
-        utm_term: params.get('utm_term'),
-        utm_content: params.get('utm_content'),
+/**
+ * Initializes all custom analytics tracking functionality.
+ */
+function initializeAnalytics() {
+    if (customAnalyticsInitialized) {
+        console.log('DEBUG: Custom analytics already initialized.');
+        return;
+    }
+    console.log('DEBUG: Analytics consent granted. Initializing custom trackers...');
+
+    // Helper function to parse UTM parameters
+    function getUtmParams() {
+        const params = new URLSearchParams(location.search);
+        return {
+            utm_source: params.get('utm_source'),
+            utm_medium: params.get('utm_medium'),
+            utm_campaign: params.get('utm_campaign'),
+            utm_term: params.get('utm_term'),
+            utm_content: params.get('utm_content'),
+        };
+    }
+
+    // 1) Page view on load
+    const pageViewHandler = () => {
+        const utmData = getUtmParams();
+        const pageViewData = {
+            url: location.href,
+            title: document.title,
+            timestamp: Date.now(),
+            referrer: document.referrer || null,
+            screen_width: screen.width,
+            screen_height: screen.height,
+            viewport_width: window.innerWidth,
+            viewport_height: window.innerHeight,
+            browser_language: navigator.language,
+            browser_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            pathname: location.pathname,
+            utm_source: utmData.utm_source,
+            utm_medium: utmData.utm_medium,
+            utm_campaign: utmData.utm_campaign,
+            utm_term: utmData.utm_term,
+            utm_content: utmData.utm_content,
+        };
+        console.log("DEBUG: Tracking page_view with data:", pageViewData);
+        trackEvent('page_view', pageViewData);
     };
+
+    if (document.readyState === 'complete') {
+        pageViewHandler();
+    } else {
+        window.addEventListener('load', pageViewHandler, { once: true });
+    }
+
+    // 2) Track section impressions via IntersectionObserver
+    if (navSections.length > 0) {
+        const sectionObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    console.log("DEBUG: Tracking section_view:", entry.target.id);
+                    trackEvent('section_view', {
+                        section: entry.target.id,
+                        timestamp: Date.now(),
+                    });
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        navSections.forEach(sec => sectionObserver.observe(sec));
+    }
+
+    // 3) Track clicks on all links & buttons
+    // Ensure this listener is only added once by initializeAnalytics
+    // If initializeAnalytics is guarded by customAnalyticsInitialized, this is fine.
+    document.addEventListener('click', (e) => {
+        if (!customAnalyticsInitialized) return; // Extra guard if needed
+        const el = e.target.closest('a, button');
+        if (!el) return;
+        const clickData = {
+            tag: el.tagName.toLowerCase(),
+            text: el.innerText ? el.innerText.trim().slice(0, 50) : '',
+            href: el.href || null,
+            timestamp: Date.now(),
+        };
+        console.log("DEBUG: Tracking click:", clickData);
+        trackEvent('click', clickData);
+    });
+
+    // 4) Track hovers on any element with data-track-hover attribute
+    document.querySelectorAll('[data-track-hover]').forEach(el => {
+        // Ensure this listener is only added once
+        // A simple way is to add a marker attribute to the element after adding the listener,
+        // or ensure initializeAnalytics is only called once.
+        if (!el.dataset.hoverListenerAdded) { // Example marker
+            el.addEventListener('mouseenter', () => {
+                if (!customAnalyticsInitialized) return; // Extra guard
+                const hoverData = {
+                    element: el.dataset.trackHover,
+                    timestamp: Date.now(),
+                };
+                console.log("DEBUG: Tracking hover:", hoverData);
+                trackEvent('hover', hoverData);
+            });
+            el.dataset.hoverListenerAdded = 'true';
+        }
+    });
+
+    customAnalyticsInitialized = true;
+    console.log('DEBUG: Custom analytics services are now active.');
 }
+
+/**
+ * Disables analytics tracking and cleans up.
+ */
+function disableAnalytics() {
+    if (!customAnalyticsInitialized) {
+        console.log('DEBUG: Analytics not initialized or already disabled.');
+        return;
+    }
+    console.log('DEBUG: Analytics consent revoked/missing. Disabling analytics...');
+    // For this project, the main impact is stopping new data collection.
+    // If you had complex listeners added to document/window that need specific removal,
+    // you'd do that here. For instance, the click listener:
+    // document.removeEventListener('click', yourStoredClickHandler);
+    // However, since the listeners check 'customAnalyticsInitialized', they will mostly self-disable.
+    // The hover listeners are on specific elements and would need more complex removal if required.
+    // For simplicity, we'll rely on customAnalyticsInitialized flag to gate execution.
+
+    customAnalyticsInitialized = false; // This is the primary gate
+    console.log('DEBUG: Custom analytics services are now inactive.');
+}
+
+// --- CookieYes Integration Logic (Based on Expert Review) ---
+
+/**
+ * Handles consent based on CookieYes data object.
+ * @param {object} consentDetail - Object from event.detail or getCkyConsent().
+ */
+function handleCookieYesConsent(consentDetail) {
+    let analyticsConsentGiven = false;
+
+    if (consentDetail && consentDetail.categories && typeof consentDetail.categories.analytics === 'boolean') {
+        // From getCkyConsent() or cookieyes_banner_load
+        analyticsConsentGiven = consentDetail.categories.analytics;
+        console.log('DEBUG: Consent status from categories.analytics:', analyticsConsentGiven);
+    } else if (consentDetail && consentDetail.accepted && Array.isArray(consentDetail.accepted)) {
+        // From cookieyes_consent_update
+        analyticsConsentGiven = consentDetail.accepted.includes('analytics');
+        console.log('DEBUG: Consent status from accepted.includes("analytics"):', analyticsConsentGiven);
+    } else {
+        console.warn('DEBUG: Could not determine analytics consent from CookieYes data:', consentDetail);
+    }
+
+    if (analyticsConsentGiven) {
+        initializeAnalytics();
+    } else {
+        disableAnalytics();
+    }
+}
+
+// 1. Listen for CookieYes banner load (initial consent state)
+// This event fires when the banner is ready and initial consent is known.
+document.addEventListener('cookieyes_banner_load', function(event) {
+    console.log('DEBUG: CookieYes banner_load event. Detail:', event.detail);
+    if (event.detail) {
+        handleCookieYesConsent(event.detail);
+    }
+});
+
+// 2. Listen for consent updates
+// This event fires when the user changes their consent settings.
+// !!! IMPORTANT: Verify the exact event name from CookieYes documentation.
+// 'cookieyes_consent_update' is common.
+document.addEventListener('cookieyes_consent_update', function(event) {
+    console.log('DEBUG: CookieYes consent_update event. Detail:', event.detail);
+    if (event.detail) {
+        handleCookieYesConsent(event.detail);
+    }
+});
+
+// 3. Fallback/Initial check using getCkyConsent() after DOM is ready
+// This is a safety net in case the events are missed or if we need to check before they fire.
+window.addEventListener('DOMContentLoaded', () => {
+    console.log("DEBUG: DOMContentLoaded. Initializing non-analytics UI elements.");
+
+    // Non-analytics UI initializations that should always run
+    animateOnScroll();
+    const heroElements = document.querySelectorAll('.hero h1, .hero h2, .hero-description, .cta-container');
+    heroElements.forEach((el, index) => {
+        el.classList.add('fadeIn');
+        el.classList.add(`delay-${index + 1}`);
+    });
+
+    // Attempt to get initial consent if CookieYes SDK is ready
+    // Give CookieYes script a moment to ensure window.getCkyConsent is available
+    setTimeout(() => {
+        if (typeof window.getCkyConsent === 'function') {
+            console.log('DEBUG: DOMContentLoaded - Fallback: Checking consent via getCkyConsent().');
+            const consentData = window.getCkyConsent();
+            if (consentData) {
+                // Only initialize if not already done by banner_load event
+                if (!customAnalyticsInitialized && (!consentData.categories || consentData.categories.analytics !== true)) {
+                    // If consent is explicitly no or not yet given, ensure disableAnalytics is called
+                    // in case a previous state was true.
+                    disableAnalytics();
+                } else if (!customAnalyticsInitialized && consentData.categories && consentData.categories.analytics === true) {
+                     handleCookieYesConsent(consentData);
+                }
+            } else {
+                console.log('DEBUG: DOMContentLoaded - Fallback: getCkyConsent() returned no data, relying on events.');
+                disableAnalytics(); // Default to disabled if no data from API
+            }
+        } else {
+            console.log('DEBUG: DOMContentLoaded - Fallback: window.getCkyConsent not available yet. Relying on events.');
+            // If analytics might have been initialized from a previous consent cookie
+            // before CookieYes fully loads and overrides, it's safer to ensure it's disabled here.
+            if (!customAnalyticsInitialized) { // Only if not already initialized by an event
+                 disableAnalytics();
+            }
+        }
+    }, 500); // Adjust delay if needed, or use a more robust polling mechanism for getCkyConsent if required earlier
+});
 
 // Scroll handler for header effects
 window.addEventListener('scroll', () => {
@@ -451,76 +662,6 @@ function createSustainableLoader() {
         }, 1500); // Show loader for at least 1.5 seconds for effect
     });
 }
-
-// 1) Page view on load
-window.addEventListener('load', () => {
-    const utmData = getUtmParams(); // Get UTM data
-    const pageViewData = {
-        // Original data
-        url: location.href,
-        title: document.title,
-        timestamp: Date.now(),
-
-        // --- NEW DATA POINTS ---
-        referrer: document.referrer || null, // Use null if no referrer
-        screen_width: screen.width,
-        screen_height: screen.height,
-        viewport_width: window.innerWidth,
-        viewport_height: window.innerHeight,
-        browser_language: navigator.language,
-        browser_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        pathname: location.pathname,
-
-        // UTM parameters (will be null if not present in URL)
-        utm_source: utmData.utm_source,
-        utm_medium: utmData.utm_medium,
-        utm_campaign: utmData.utm_campaign,
-        utm_term: utmData.utm_term,
-        utm_content: utmData.utm_content,
-        // --- END NEW DATA POINTS ---
-    };
-
-    console.log("DEBUG: Tracking page_view with data:", pageViewData); // Optional: Log data being sent
-    trackEvent('page_view', pageViewData);
-});
-
-// 2) Track section impressions via IntersectionObserver
-const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            trackEvent('section_view', {
-                section: entry.target.id,
-                timestamp: Date.now(),
-            });
-            io.unobserve(entry.target);
-        }
-    });
-}, { threshold: 0.5 });
-
-navSections.forEach(sec => io.observe(sec));
-
-// 3) Track clicks on all links & buttons
-document.addEventListener('click', e => {
-    const el = e.target.closest('a, button');
-    if (!el) return;
-    trackEvent('click', {
-        tag: el.tagName.toLowerCase(),
-        text: el.innerText.trim().slice(0,50),
-        href: el.href || null,
-        timestamp: Date.now(),
-    });
-});
-
-// 4) Track hovers on any element with data-track-hover attribute
-document.querySelectorAll('[data-track-hover]').forEach(el => {
-    el.addEventListener('mouseenter', () => {
-        trackEvent('hover', {
-            element: el.dataset.trackHover,
-            timestamp: Date.now(),
-        });
-    });
-});
-
 
 // Initialize the sustainable loader
 createSustainableLoader();
