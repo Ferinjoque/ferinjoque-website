@@ -10,41 +10,38 @@ const navSections  = document.querySelectorAll('section[id]');
 const contactForm = document.getElementById('contactForm');
 const contactSection = document.getElementById('contact');
 
+// --- Flags ---
 let customAnalyticsInitialized = false;
 let recaptchaLoaded = false;
 
-const loadRecaptcha = (entries, observer) => {
+/**
+ * Dynamically loads the reCAPTCHA script when the contact section is visible.
+ * This is for security and considered "Necessary".
+ */
+const loadRecaptchaScript = (entries, observer) => {
     entries.forEach(entry => {
-        // Check if the contact section is intersecting (visible) and script hasn't loaded
         if (entry.isIntersecting && !recaptchaLoaded) {
             console.log("DEBUG: Contact section visible, loading reCAPTCHA...");
-            recaptchaLoaded = true; // Set flag
-
-            // Create the script element
+            recaptchaLoaded = true;
             const script = document.createElement('script');
-            // IMPORTANT: Replace YOUR_SITE_KEY with your actual reCAPTCHA v3 Site Key
             script.src = 'https://www.google.com/recaptcha/api.js?render=6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v';
-            script.defer = true; // Use defer
-            // script.async = true; // Alternatively use async
-
-            // Append to head or body
-            document.head.appendChild(script); // Appending to head is common
-
-            // Stop observing once loaded
-            observer.unobserve(contactSection);
+            script.defer = true;
+            document.head.appendChild(script);
+            if (observer && contactSection) {
+                observer.unobserve(contactSection);
+            }
         }
     });
 };
 
-// Only set up observer if contact section exists
+// Setup IntersectionObserver for reCAPTCHA loading
 if (contactSection) {
-    const observerOptions = {
-        rootMargin: '0px', // Trigger as soon as it enters viewport
-        threshold: 0.1 // Trigger when 10% is visible
-    };
-    const observer = new IntersectionObserver(loadRecaptcha, observerOptions);
-    observer.observe(contactSection);
+    const recaptchaObserverOptions = { rootMargin: '0px', threshold: 0.1 };
+    const recaptchaObserver = new IntersectionObserver(loadRecaptchaScript, recaptchaObserverOptions);
+    recaptchaObserver.observe(contactSection);
 }
+
+// --- Analytics Initialization & Teardown ---
 
 /**
  * Initializes all custom analytics tracking functionality.
@@ -177,7 +174,7 @@ function disableAnalytics() {
     console.log('DEBUG: Custom analytics services are now inactive.');
 }
 
-// --- CookieYes Integration Logic (Based on Expert Review) ---
+// --- CookieYes Integration Logic  ---
 
 /**
  * Handles consent based on CookieYes data object.
@@ -270,28 +267,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Scroll handler for header effects
 window.addEventListener('scroll', () => {
-    // Add scrolled class to header when scrolled down
     if (window.scrollY > 50) {
         header.classList.add('scrolled');
     } else {
         header.classList.remove('scrolled');
     }
-    
-    // Highlight active section in navigation
     highlightActiveSection();
-    
-    // Animate elements when they come into view
     animateOnScroll();
 });
 
 // Mobile menu toggle
 menuToggle.addEventListener('click', () => {
     navLinks.classList.toggle('active');
-    
-    // Animate hamburger icon
     const bars = document.querySelectorAll('.bar');
-    bars.forEach(bar => bar.classList.toggle('active'));
-    
+    bars.forEach(bar => bar.classList.toggle('active')); 
     if (navLinks.classList.contains('active')) {
         bars[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
         bars[1].style.opacity = '0';
@@ -307,8 +296,6 @@ menuToggle.addEventListener('click', () => {
 navLinks.addEventListener('click', (e) => {
     if (e.target.tagName === 'A') {
         navLinks.classList.remove('active');
-        
-        // Reset hamburger icon
         const bars = document.querySelectorAll('.bar');
         bars[0].style.transform = 'none';
         bars[1].style.opacity = '1';
@@ -319,22 +306,17 @@ navLinks.addEventListener('click', (e) => {
 // Function to highlight active section in navigation
 function highlightActiveSection() {
     let scrollPosition = window.scrollY + 100;
-    
     sections.forEach(section => {
         const sectionTop = section.offsetTop;
         const sectionHeight = section.offsetHeight;
         const sectionId = section.getAttribute('id');
-        
         if (
             scrollPosition >= sectionTop && 
             scrollPosition < sectionTop + sectionHeight
         ) {
-            // Remove active class from all links
             document.querySelectorAll('.nav-links a').forEach(link => {
                 link.classList.remove('active');
             });
-            
-            // Add active class to current section link
             const activeLink = document.querySelector(`.nav-links a[href="#${sectionId}"]`);
             if (activeLink) {
                 activeLink.classList.add('active');
@@ -346,7 +328,6 @@ function highlightActiveSection() {
 // Function to animate elements when they come into view
 function animateOnScroll() {
     const animateElements = document.querySelectorAll('.project-card, .timeline-item, .skill-category');
-    
     animateElements.forEach(el => {
         const elementPosition = el.getBoundingClientRect().top;
         const windowHeight = window.innerHeight;
@@ -357,135 +338,94 @@ function animateOnScroll() {
     });
 }
 
+// Contact Form Logic
 if (contactForm) {
-  contactForm.addEventListener('submit', e => {
-    e.preventDefault();
-
-    // collect & validate
-    const data = Object.fromEntries(new FormData(contactForm));
-    if (!data.name || !data.email || !data.message) {
-      showFormMessage('Please fill in all fields', 'error');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-      showFormMessage('Please enter a valid email address', 'error');
-      return;
-    }
-
-    if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
-        showFormMessage('reCAPTCHA not loaded yet. Please wait a moment and try again.', 'error');
-        console.error("reCAPTCHA object not ready.");
-        return;
-    }
-
-    // run recaptcha v3
-    grecaptcha.ready(() => {
-      grecaptcha.execute('6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v', { action: 'contact' })
-        .then(token => {
-          // append the recaptcha response
-          const formData = new FormData(contactForm);
-          formData.append('g-recaptcha-response', token);
-
-          // post to Formspree
-          fetch('https://formspree.io/f/xblgnwdw', {
-            method: 'POST',
-            headers: { 'Accept': 'application/json' },
-            body: formData
-          })
-          .then(res => res.json())
-          .then(json => {
-            if (json.ok) {
-              showFormMessage(
-                'Message sent! I’ll get back to you soon.',
-                'success'
-              );
-              contactForm.reset();
-            } else {
-              // Formspree returns errors in json.errors
-              const msg = json.errors
-                ? json.errors.map(e => e.message).join(', ')
-                : 'Oops! Something went wrong.';
-              showFormMessage(msg, 'error');
-            }
-          })
-          .catch(() => {
-            showFormMessage(
-              'Network error. Please try again later.',
-              'error'
-            );
-          });
+    contactForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(contactForm));
+        if (!data.name || !data.email || !data.message) {
+            showFormMessage('Please fill in all fields', 'error'); return;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+            showFormMessage('Please enter a valid email address', 'error'); return;
+        }
+        if (typeof grecaptcha === 'undefined' || typeof grecaptcha.ready !== 'function') {
+            showFormMessage('reCAPTCHA is not ready. Please wait or refresh.', 'error');
+            console.error("reCAPTCHA object not ready for form submission."); return;
+        }
+        grecaptcha.ready(() => {
+            grecaptcha.execute('6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v', { action: 'contact' })
+                .then(token => {
+                    const formData = new FormData(contactForm);
+                    formData.append('g-recaptcha-response', token);
+                    fetch('https://formspree.io/f/xblgnwdw', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json' },
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(json => {
+                        if (json.ok) {
+                            showFormMessage('Message sent! I’ll get back to you soon.', 'success');
+                            contactForm.reset();
+                        } else {
+                            const msg = json.errors ? json.errors.map(e => e.message).join(', ') : 'Oops! Something went wrong.';
+                            showFormMessage(msg, 'error');
+                        }
+                    })
+                    .catch(() => showFormMessage('Network error. Please try again later.', 'error'));
+                });
         });
     });
-  });
 }
 
 // Function to display form submission messages
 function showFormMessage(message, type) {
-    // Remove any existing message
     const existingMessage = document.querySelector('.form-message');
-    if (existingMessage) {
-        existingMessage.remove();
-    }
-    
-    // Create message element
+    if (existingMessage) existingMessage.remove();
     const messageElement = document.createElement('div');
-    messageElement.classList.add('form-message');
-    messageElement.classList.add(type === 'error' ? 'form-error' : 'form-success');
+    messageElement.className = `form-message ${type === 'error' ? 'form-error' : 'form-success'}`;
     messageElement.textContent = message;
-    
-    // Add to the DOM after the form
-    contactForm.parentNode.appendChild(messageElement);
-    
-    // Auto-remove after 5 seconds
+    if (contactForm && contactForm.parentNode) {
+        contactForm.parentNode.appendChild(messageElement);
+    }
     setTimeout(() => {
         messageElement.classList.add('fade-out');
-        setTimeout(() => {
-            messageElement.remove();
-        }, 300);
+        setTimeout(() => messageElement.remove(), 300);
     }, 5000);
 }
 
-// Add a leaf cursor trail effect for sustainability theme
+// Add a leaf cursor trail effect
 function createLeafTrail() {
     const colors = ['#4CAF50', '#388E3C', '#81C784', '#C8E6C9'];
-    
     document.addEventListener('mousemove', function(e) {
         const leaf = document.createElement('div');
         leaf.className = 'leaf-trail';
         leaf.style.left = e.pageX + 'px';
         leaf.style.top = e.pageY + 'px';
-        
-        // Randomize leaf properties for variety
         const size = Math.random() * 10 + 5;
         const opacity = Math.random() * 0.3 + 0.1;
         const rotationAngle = Math.random() * 360;
         const color = colors[Math.floor(Math.random() * colors.length)];
-        
         leaf.style.width = size + 'px';
         leaf.style.height = size + 'px';
         leaf.style.opacity = opacity;
         leaf.style.backgroundColor = color;
         leaf.style.transform = `rotate(${rotationAngle}deg)`;
-        
         document.body.appendChild(leaf);
-        
-        // Animate and remove the leaf
         setTimeout(() => {
             leaf.style.opacity = '0';
             leaf.style.transform = `translate(${Math.random() * 20 - 10}px, ${Math.random() * 20 + 10}px) rotate(${rotationAngle + 20}deg)`;
-            
             setTimeout(() => {
                 document.body.removeChild(leaf);
             }, 500);
         }, 100);
     });
 }
+if (typeof window !== 'undefined') { createLeafTrail(); }
 
-// Initialize the leaf trail effect
-createLeafTrail();
-
-// Add CSS for the leaf trail effect
+// Add CSS for the leaf trail effect and form messages
 const leafTrailStyle = document.createElement('style');
 leafTrailStyle.innerHTML = `
     .leaf-trail {
@@ -524,52 +464,28 @@ leafTrailStyle.innerHTML = `
         opacity: 0;
     }
 `;
-document.head.appendChild(leafTrailStyle);
-
-// Call initial animations on page load
-window.addEventListener('DOMContentLoaded', () => {
-    // Animate elements that are already visible
-    animateOnScroll();
-    
-    // Add fadeIn animations to hero content
-    const heroElements = document.querySelectorAll('.hero h1, .hero h2, .hero-description, .cta-container');
-    heroElements.forEach((el, index) => {
-        el.classList.add('fadeIn');
-        el.classList.add(`delay-${index + 1}`);
-    });
-});
+if (typeof document !== 'undefined' && document.head) { document.head.appendChild(leafTrailStyle); }
 
 // Create sustainable loading effect
 function createSustainableLoader() {
     const loader = document.createElement('div');
     loader.className = 'sustainable-loader';
-    
     const loaderContent = document.createElement('div');
     loaderContent.className = 'loader-content';
-    
-    // Add leaf icon
     const leafIcon = document.createElement('div');
     leafIcon.className = 'loader-leaf';
     leafIcon.innerHTML = '<span class="material-icons">eco</span>';
-    
-    // Add loading text
     const loadingText = document.createElement('div');
     loadingText.className = 'loader-text';
     loadingText.innerHTML = 'Loading<span class="dot-1">.</span><span class="dot-2">.</span><span class="dot-3">.</span>';
-    
-    // Add sustainability message
     const sustainabilityMessage = document.createElement('div');
     sustainabilityMessage.className = 'loader-message';
-    sustainabilityMessage.textContent = 'This site is optimized for minimal energy consumption';
-    
+    sustainabilityMessage.textContent = 'This site is optimized for minimal energy consumption';   
     loaderContent.appendChild(leafIcon);
     loaderContent.appendChild(loadingText);
     loaderContent.appendChild(sustainabilityMessage);
     loader.appendChild(loaderContent);
-    
     document.body.appendChild(loader);
-    
-    // Add loading animation styles
     const loaderStyle = document.createElement('style');
     loaderStyle.innerHTML = `
         .sustainable-loader {
@@ -648,20 +564,15 @@ function createSustainableLoader() {
         }
     `;
     document.head.appendChild(loaderStyle);
-    
-    // Hide loader after page is fully loaded
+
     window.addEventListener('load', () => {
         setTimeout(() => {
             loader.style.opacity = '0';
             loader.style.visibility = 'hidden';
-            
-            // Remove loader after transition
             setTimeout(() => {
                 document.body.removeChild(loader);
             }, 500);
-        }, 1500); // Show loader for at least 1.5 seconds for effect
+        }, 1500);
     });
 }
-
-// Initialize the sustainable loader
-createSustainableLoader();
+if (typeof window !== 'undefined') { createSustainableLoader(); }
