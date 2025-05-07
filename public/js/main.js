@@ -13,6 +13,7 @@ const contactSection = document.getElementById('contact');
 // --- Flags ---
 let customAnalyticsInitialized = false;
 let recaptchaLoaded = false;
+let sectionObserver = null;
 
 /**
  * Dynamically loads the reCAPTCHA script when the contact section is visible.
@@ -37,8 +38,8 @@ const loadRecaptchaScript = (entries, observer) => {
 // Setup IntersectionObserver for reCAPTCHA loading
 if (contactSection) {
     const recaptchaObserverOptions = { rootMargin: '0px', threshold: 0.1 };
-    const recaptchaObserver = new IntersectionObserver(loadRecaptchaScript, recaptchaObserverOptions);
-    recaptchaObserver.observe(contactSection);
+    const recaptchaObs = new IntersectionObserver(loadRecaptchaScript, recaptchaObserverOptions);
+    recaptchaObs.observe(contactSection);
 }
 
 // --- Analytics Initialization & Teardown ---
@@ -97,19 +98,24 @@ function initializeAnalytics() {
     }
 
     // 2) Track section impressions via IntersectionObserver
-    if (navSections.length > 0) {
-        const sectionObserver = new IntersectionObserver((entries, observer) => {
+    if (navSections.length > 0 && !sectionObserver) {
+        console.log("DEBUG: Initializing IntersectionObserver for section views.");
+        sectionObserver = new IntersectionObserver((entries, observerInstance) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
+                if (entry.isIntersecting && customAnalyticsInitialized) {
                     console.log("DEBUG: Tracking section_view:", entry.target.id);
                     trackEvent('section_view', {
                         section: entry.target.id,
                         timestamp: Date.now(),
                     });
-                    observer.unobserve(entry.target);
+                    observerInstance.unobserve(entry.target);
                 }
             });
         }, { threshold: 0.5 });
+
+        navSections.forEach(sec => sectionObserver.observe(sec));
+    } else if (navSections.length > 0 && sectionObserver) {
+        console.log("DEBUG: Re-observing sections with existing IntersectionObserver.");
         navSections.forEach(sec => sectionObserver.observe(sec));
     }
 
@@ -157,7 +163,7 @@ function initializeAnalytics() {
  * Disables analytics tracking and cleans up.
  */
 function disableAnalytics() {
-    if (!customAnalyticsInitialized) {
+    if (!customAnalyticsInitialized && !sectionObserver) {
         console.log('DEBUG: Analytics not initialized or already disabled.');
         return;
     }
@@ -169,6 +175,12 @@ function disableAnalytics() {
     // However, since the listeners check 'customAnalyticsInitialized', they will mostly self-disable.
     // The hover listeners are on specific elements and would need more complex removal if required.
     // For simplicity, we'll rely on customAnalyticsInitialized flag to gate execution.
+
+    if (sectionObserver) {
+        console.log("DEBUG: Disconnecting IntersectionObserver for section views.");
+        sectionObserver.disconnect();
+        // sectionObserver = null; // Set to null so it can be re-created if consent is re-granted
+    }
 
     customAnalyticsInitialized = false; // This is the primary gate
     console.log('DEBUG: Custom analytics services are now inactive.');
@@ -227,7 +239,6 @@ document.addEventListener('cookieyes_consent_update', function(event) {
 window.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: DOMContentLoaded. Initializing non-analytics UI elements.");
 
-    // Non-analytics UI initializations that should always run
     animateOnScroll();
     const heroElements = document.querySelectorAll('.hero h1, .hero h2, .hero-description, .cta-container');
     heroElements.forEach((el, index) => {
@@ -235,34 +246,26 @@ window.addEventListener('DOMContentLoaded', () => {
         el.classList.add(`delay-${index + 1}`);
     });
 
-    // Attempt to get initial consent if CookieYes SDK is ready
-    // Give CookieYes script a moment to ensure window.getCkyConsent is available
     setTimeout(() => {
         if (typeof window.getCkyConsent === 'function') {
             console.log('DEBUG: DOMContentLoaded - Fallback: Checking consent via getCkyConsent().');
             const consentData = window.getCkyConsent();
             if (consentData) {
-                // Only initialize if not already done by banner_load event
-                if (!customAnalyticsInitialized && (!consentData.categories || consentData.categories.analytics !== true)) {
-                    // If consent is explicitly no or not yet given, ensure disableAnalytics is called
-                    // in case a previous state was true.
-                    disableAnalytics();
-                } else if (!customAnalyticsInitialized && consentData.categories && consentData.categories.analytics === true) {
-                     handleCookieYesConsent(consentData);
+                // Check if analytics is already initialized by an event
+                if (!customAnalyticsInitialized) {
+                    handleCookieYesConsent(consentData);
+                } else {
+                    console.log('DEBUG: Fallback - Analytics already initialized by event, no action needed from getCkyConsent.');
                 }
             } else {
-                console.log('DEBUG: DOMContentLoaded - Fallback: getCkyConsent() returned no data, relying on events.');
-                disableAnalytics(); // Default to disabled if no data from API
+                console.log('DEBUG: DOMContentLoaded - Fallback: getCkyConsent() returned no data.');
+                if (!customAnalyticsInitialized) disableAnalytics(); // Ensure disabled if no data
             }
         } else {
-            console.log('DEBUG: DOMContentLoaded - Fallback: window.getCkyConsent not available yet. Relying on events.');
-            // If analytics might have been initialized from a previous consent cookie
-            // before CookieYes fully loads and overrides, it's safer to ensure it's disabled here.
-            if (!customAnalyticsInitialized) { // Only if not already initialized by an event
-                 disableAnalytics();
-            }
+            console.log('DEBUG: DOMContentLoaded - Fallback: window.getCkyConsent not available yet.');
+            if (!customAnalyticsInitialized) disableAnalytics(); // Ensure disabled if API not ready
         }
-    }, 500); // Adjust delay if needed, or use a more robust polling mechanism for getCkyConsent if required earlier
+    }, 500);
 });
 
 // Scroll handler for header effects
