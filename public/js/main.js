@@ -268,6 +268,276 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 500);
 });
 
+// --- START: Plexus Lightbulb Animation for About Section ---
+let sustainabilityAnimationStarted = false; // Flag to ensure animation only starts once
+
+function startSustainabilityAnimation() {
+    if (sustainabilityAnimationStarted) return; // Don't start if already started
+    sustainabilityAnimationStarted = true;
+    console.log("DEBUG: About section visible, starting sustainability animation...");
+
+    const canvas = document.getElementById('sustainabilityAnimationCanvas');
+    if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+        console.error("Sustainability animation canvas not found or is not a canvas element.");
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error("Could not get 2D context for animation canvas.");
+        return;
+    }
+
+    let currentWidth = 300; // Default
+    let currentHeight = 390; // Default (300 * 1.3)
+
+    function resizeCanvas() {
+        const parent = canvas.parentElement;
+        if (parent) {
+            const newWidth = Math.min(parent.clientWidth, 450); // Max width
+            currentWidth = newWidth > 0 ? newWidth : 300; // Ensure non-zero
+            currentHeight = currentWidth * 1.3;
+
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = currentWidth * dpr;
+            canvas.height = currentHeight * dpr;
+            canvas.style.width = `${currentWidth}px`;
+            canvas.style.height = `${currentHeight}px`;
+            ctx.scale(dpr, dpr);
+        }
+    }
+    resizeCanvas(); // Initial resize to set dimensions even before animation starts
+    // Optional: Consider adding a window resize listener if the parent's size can change
+    // window.addEventListener('resize', resizeCanvas);
+
+
+    // Animation variables (Plexus Lightbulb v2)
+    const bulbColor = '#3F51B5';
+    const recycleSymbolColor = '#4CAF50';
+    const particleColor = '#81C784';
+    const backgroundColor = '#111111';
+    const plexusLineColor = 'rgba(63, 81, 181, 0.25)';
+    const recyclePlexusLineColor = 'rgba(76, 175, 80, 0.25)';
+
+    const growthSpeed = 0.007;
+    const particleSpeedFactor = 0.5;
+    let globalTime = 0;
+    let formationProgress = 0;
+
+    const bulbOuterWidth = () => currentWidth * 0.7;
+    const bulbOuterHeight = () => currentHeight * 0.8;
+    const bulbBodyRatio = 0.65;
+    const bulbNeckRatio = 0.15;
+    const centerX = () => currentWidth / 2;
+    const bulbTopY = () => currentHeight * 0.1;
+
+    let bulbPoints = [];
+    let bulbLines = [];
+    let recycleSymbolPoints = [];
+    let recycleSymbolLines = [];
+    const particles = [];
+    let pointIdCounter = 0;
+
+    // --- START: Shape Definition and Plexus Logic (from Plexus Lightbulb v2) ---
+    function defineBulbPoints() {
+        bulbPoints = [];
+        pointIdCounter = 0;
+        const bodyH = bulbOuterHeight() * bulbBodyRatio;
+        const bodyCY = bulbTopY() + bodyH / 2;
+        const numEllipsePoints = 20;
+        for (let i = 0; i < numEllipsePoints; i++) {
+            const angle = (i / numEllipsePoints) * Math.PI * 2;
+            bulbPoints.push({
+                id: pointIdCounter++,
+                x: centerX() + (bulbOuterWidth() / 2) * Math.cos(angle),
+                y: bodyCY + (bodyH / 2) * Math.sin(angle),
+                spawnTime: Math.random() * 0.3,
+            });
+        }
+        const neckTY = bulbTopY() + bodyH;
+        const neckH = bulbOuterHeight() * bulbNeckRatio;
+        const neckBY = neckTY + neckH;
+        const neckWS = bulbOuterWidth() * 0.35;
+        const neckWE = bulbOuterWidth() * 0.3;
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() - neckWS / 2, y: neckTY, spawnTime: 0.1 });
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() + neckWS / 2, y: neckTY, spawnTime: 0.1 });
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() + neckWE / 2, y: neckBY, spawnTime: 0.15 });
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() - neckWE / 2, y: neckBY, spawnTime: 0.15 });
+        const baseTY = neckBY;
+        const baseH = bulbOuterHeight() * (1 - bulbBodyRatio - bulbNeckRatio);
+        const baseBY = baseTY + baseH;
+        const baseW = bulbOuterWidth() * 0.35;
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() - baseW / 2, y: baseTY, spawnTime: 0.2 });
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() + baseW / 2, y: baseTY, spawnTime: 0.2 });
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() + baseW / 2, y: baseBY, spawnTime: 0.25 });
+        bulbPoints.push({ id: pointIdCounter++, x: centerX() - baseW / 2, y: baseBY, spawnTime: 0.25 });
+    }
+
+    function defineRecycleSymbolPoints() {
+        recycleSymbolPoints = [];
+        recycleSymbolLines = [];
+        const symbolSize = bulbOuterWidth() * 0.35;
+        const symbolCenterY = bulbTopY() + (bulbOuterHeight() * bulbBodyRatio) / 2;
+        const armLength = symbolSize / 2;
+        const armThickness = symbolSize / 5;
+        for (let i = 0; i < 3; i++) {
+            const angle = (i / 3) * Math.PI * 2 + Math.PI / 6;
+            const x1 = centerX() + Math.cos(angle) * armLength;
+            const y1 = symbolCenterY + Math.sin(angle) * armLength;
+            const x2 = centerX() + Math.cos(angle) * (armLength - armThickness * 1.5);
+            const y2 = symbolCenterY + Math.sin(angle) * (armLength - armThickness * 1.5);
+            const x3 = centerX() + Math.cos(angle + Math.PI / 3) * (armLength - armThickness * 0.5);
+            const y3 = symbolCenterY + Math.sin(angle + Math.PI / 3) * (armLength - armThickness * 0.5);
+            const pTip = { id: pointIdCounter++, x: x1, y: y1, spawnTime: 0.3 + i * 0.05 };
+            const pInner = { id: pointIdCounter++, x: x2, y: y2, spawnTime: 0.3 + i * 0.05 };
+            const pBend = { id: pointIdCounter++, x: x3, y: y3, spawnTime: 0.35 + i * 0.05 };
+            recycleSymbolPoints.push(pTip, pInner, pBend);
+
+            const pNextInnerIndex = ((i + 1) % 3) * 3 + 1;
+            // Ensure pNextInner exists, especially for the last iteration
+            const pNextInner = recycleSymbolPoints[pNextInnerIndex] || pInner; // Fallback to pInner if index is out of bounds temporarily
+
+            recycleSymbolLines.push({ p1: pTip, p2: pBend, spawnTime: 0.4 + i * 0.05 });
+            recycleSymbolLines.push({ p1: pBend, p2: pNextInner, spawnTime: 0.45 + i * 0.05 });
+            recycleSymbolLines.push({ p1: pInner, p2: pBend, spawnTime: 0.42 + i * 0.05 });
+        }
+    }
+
+    function createPlexusLines(points, lines, maxDistFactor = 0.3) {
+        lines.length = 0;
+        const maxDist = currentWidth * maxDistFactor;
+        for (let i = 0; i < points.length; i++) {
+            for (let j = i + 1; j < points.length; j++) {
+                const p1 = points[i]; const p2 = points[j];
+                const dx = p1.x - p2.x; const dy = p1.y - p2.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < maxDist && dist > 1) {
+                    lines.push({ p1, p2, spawnTime: (p1.spawnTime + p2.spawnTime) / 2 + 0.1 });
+                }
+            }
+        }
+    }
+
+    function drawStructure(points, lines, pointColor, lineColor, pointSize, lineWidth) {
+        lines.forEach(line => {
+            if (formationProgress >= line.spawnTime) {
+                const lineProg = Math.min(1, (formationProgress - line.spawnTime) / 0.4);
+                if (lineProg > 0) {
+                    ctx.beginPath(); ctx.moveTo(line.p1.x, line.p1.y);
+                    ctx.lineTo(line.p1.x + (line.p2.x - line.p1.x) * lineProg, line.p1.y + (line.p2.y - line.p1.y) * lineProg);
+                    ctx.strokeStyle = lineColor; ctx.lineWidth = lineWidth * (currentWidth / 300);
+                    ctx.globalAlpha = lineProg * 0.6 + Math.sin(globalTime * 0.001 + line.p1.id) * 0.1 + 0.1;
+                    ctx.stroke();
+                }
+            }
+        });
+        ctx.globalAlpha = 1;
+        points.forEach(point => {
+            if (formationProgress >= point.spawnTime) {
+                const pointProg = Math.min(1, (formationProgress - point.spawnTime) / 0.2);
+                if (pointProg > 0) {
+                    ctx.beginPath(); ctx.arc(point.x, point.y, pointSize * pointProg * (currentWidth / 300), 0, Math.PI * 2);
+                    ctx.fillStyle = pointColor;
+                    ctx.globalAlpha = pointProg * 0.8 + Math.sin(globalTime * 0.0015 + point.id) * 0.2;
+                    ctx.fill();
+                }
+            }
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    function manageParticles() {
+        if (formationProgress > 0.9 && particles.length < 40 && Math.random() < 0.15) {
+            const allLines = [...bulbLines, ...recycleSymbolLines].filter(l => formationProgress >= l.spawnTime + 0.3);
+            if (allLines.length > 0) {
+                const line = allLines[Math.floor(Math.random() * allLines.length)];
+                const startAtP1 = Math.random() < 0.5;
+                const p = startAtP1 ? line.p1 : line.p2;
+                const target = startAtP1 ? line.p2 : line.p1;
+                particles.push({
+                    x: p.x, y: p.y, startX: p.x, startY: p.y,
+                    targetX: target.x, targetY: target.y,
+                    speed: (0.01 + Math.random() * 0.02) * particleSpeedFactor,
+                    progress: 0, life: 1, maxLife: 60 + Math.random() * 60, color: particleColor,
+                });
+            }
+        }
+        ctx.fillStyle = particleColor;
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.progress += p.speed; p.x = p.startX + (p.targetX - p.startX) * p.progress;
+            p.y = p.startY + (p.targetY - p.startY) * p.progress; p.life -= 1 / p.maxLife;
+            if (p.life <= 0 || p.progress >= 1) { particles.splice(i, 1); continue; }
+            ctx.beginPath(); ctx.arc(p.x, p.y, (0.8 + Math.random() * 0.4) * p.life * (currentWidth / 300), 0, Math.PI * 2);
+            ctx.globalAlpha = p.life * 0.9; ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    // --- END: Shape Definition and Plexus Logic ---
+
+    let animationFrameId;
+    function render() {
+        globalTime++;
+        if (formationProgress < 1) {
+            formationProgress += growthSpeed;
+            formationProgress = Math.min(1, formationProgress);
+        }
+        ctx.clearRect(0, 0, currentWidth, currentHeight);
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, currentWidth, currentHeight);
+        drawStructure(bulbPoints, bulbLines, bulbColor, plexusLineColor, 1.8, 0.6);
+        if (formationProgress > 0.2) {
+            ctx.save();
+            drawStructure(recycleSymbolPoints, recycleSymbolLines, recycleSymbolColor, recyclePlexusLineColor, 1.4, 0.7);
+            ctx.restore();
+        }
+        manageParticles();
+        animationFrameId = requestAnimationFrame(render);
+    }
+
+    // Initialize shapes
+    defineBulbPoints();
+    defineRecycleSymbolPoints();
+    createPlexusLines(bulbPoints, bulbLines, 0.35);
+    // recycleSymbolLines are defined in defineRecycleSymbolPoints
+
+    render(); // Start the animation loop
+
+    // Cleanup function (not strictly needed if observer unobserves, but good practice)
+    return () => {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+    };
+}
+// --- END: Plexus Lightbulb Animation ---
+
+
+// --- START: IntersectionObserver for About Section Animation ---
+const aboutSectionForAnimation = document.getElementById('about'); // Target the #about section
+
+if (aboutSectionForAnimation) {
+    const animationObserverOptions = {
+        rootMargin: '0px',
+        threshold: 0.25 // Start when 25% of the section is visible
+    };
+
+    const animationObserverCallback = (entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !sustainabilityAnimationStarted) {
+                startSustainabilityAnimation();
+                observer.unobserve(aboutSectionForAnimation); // Stop observing once started
+            }
+        });
+    };
+
+    const animationObserver = new IntersectionObserver(animationObserverCallback, animationObserverOptions);
+    animationObserver.observe(aboutSectionForAnimation);
+} else {
+    console.warn("DEBUG: About section for animation trigger not found.");
+}
+// --- END: IntersectionObserver for About Section Animation ---
+
 // Scroll handler for header effects
 window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
