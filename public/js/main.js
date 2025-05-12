@@ -269,34 +269,49 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- START: Plexus Lightbulb Animation for About Section ---
-let sustainabilityAnimationStarted = false; // Flag to ensure animation only starts once
+// This entire block should be placed inside your public/js/main.js file,
+// replacing the previous startSustainabilityAnimation function.
+
+let sustainabilityAnimationStarted = false;
 
 function startSustainabilityAnimation() {
-    if (sustainabilityAnimationStarted) return; // Don't start if already started
+    if (sustainabilityAnimationStarted) return;
     sustainabilityAnimationStarted = true;
-    console.log("DEBUG: About section visible, starting sustainability animation...");
+    console.log("DEBUG: About section visible, starting EPIC GENERATIVE sustainability animation...");
 
     const canvas = document.getElementById('sustainabilityAnimationCanvas');
     if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
-        console.error("Sustainability animation canvas not found or is not a canvas element.");
+        console.error("Sustainability animation canvas not found.");
         return;
     }
-
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-        console.error("Could not get 2D context for animation canvas.");
+        console.error("Could not get 2D context.");
         return;
     }
 
-    let currentWidth = 300; // Default
-    let currentHeight = 390; // Default (300 * 1.3)
+    let currentWidth = 300;
+    let currentHeight = 390; // Default 1:1.3 aspect ratio
 
     function resizeCanvas() {
         const parent = canvas.parentElement;
         if (parent) {
-            const newWidth = Math.min(parent.clientWidth, 450); // Max width
-            currentWidth = newWidth > 0 ? newWidth : 300; // Ensure non-zero
-            currentHeight = currentWidth * 1.3;
+            let containerWidth = parent.clientWidth;
+            if (containerWidth <= 0) containerWidth = 280;
+
+            let targetWidth = containerWidth;
+            let targetHeight = targetWidth * 1.3;
+            const maxVisualHeight = Math.min(window.innerHeight * 0.55, 320);
+
+            if (targetHeight > maxVisualHeight) {
+                targetHeight = maxVisualHeight;
+                targetWidth = targetHeight / 1.3;
+            }
+            targetWidth = Math.max(200, targetWidth);
+            targetHeight = targetWidth * 1.3;
+
+            currentWidth = Math.floor(targetWidth);
+            currentHeight = Math.floor(targetHeight);
 
             const dpr = window.devicePixelRatio || 1;
             canvas.width = currentWidth * dpr;
@@ -304,210 +319,326 @@ function startSustainabilityAnimation() {
             canvas.style.width = `${currentWidth}px`;
             canvas.style.height = `${currentHeight}px`;
             ctx.scale(dpr, dpr);
+            console.log(`DEBUG: Canvas resized to ${currentWidth}x${currentHeight}`);
+        } else {
+            const dpr = window.devicePixelRatio || 1;
+            currentWidth = canvas.width / dpr;
+            currentHeight = canvas.height / dpr;
         }
     }
-    resizeCanvas(); // Initial resize to set dimensions even before animation starts
-    // Optional: Consider adding a window resize listener if the parent's size can change
-    // window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    // Add a debounced resize listener for better responsiveness
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resizeCanvas, 100);
+    });
 
-
-    // Animation variables (Plexus Lightbulb v2)
-    const bulbColor = '#3F51B5';
-    const recycleSymbolColor = '#4CAF50';
-    const particleColor = '#81C784';
-    const backgroundColor = '#111111';
-    const plexusLineColor = 'rgba(63, 81, 181, 0.25)';
+    // --- Animation Theme & Parameters ---
+    const bulbColor = '#3F51B5';        // Main structure
+    const bulbAccentColor = 'rgba(120, 140, 230, 0.9)'; // Brighter points
+    const plexusLineColor = 'rgba(63, 81, 181, 0.2)';  // Fainter connections
+    const recycleSymbolColor = '#4CAF50'; // Green
+    const recycleAccentColor = 'rgba(129, 199, 132, 0.9)'; // Lighter green points
     const recyclePlexusLineColor = 'rgba(76, 175, 80, 0.25)';
+    const particleColor = '#81C784';
+    const energyColor = 'rgba(173, 216, 230, 0.7)'; // Light blue for energy
+    const backgroundColor = '#111111';
 
-    const growthSpeed = 0.007;
-    const particleSpeedFactor = 0.5;
+    const growthSpeed = 0.003; // Slower growth for more phases to be visible
     let globalTime = 0;
-    let formationProgress = 0;
+    let mainFormationProgress = 0; // Overall progress (0 to 1)
 
-    const bulbOuterWidth = () => currentWidth * 0.7;
-    const bulbOuterHeight = () => currentHeight * 0.8;
-    const bulbBodyRatio = 0.65;
-    const bulbNeckRatio = 0.15;
+    // --- Structure Definitions ---
+    const bulbOuterWidth = () => currentWidth * 0.65; // Slightly smaller bulb for effect
+    const bulbOuterHeight = () => currentHeight * 0.75;
+    const bulbBodyRatio = 0.60;
+    const bulbNeckRatio = 0.18;
     const centerX = () => currentWidth / 2;
-    const bulbTopY = () => currentHeight * 0.1;
+    const bulbTopY = () => currentHeight * 0.12;
 
-    let bulbPoints = [];
-    let bulbLines = [];
-    let recycleSymbolPoints = [];
-    let recycleSymbolLines = [];
+    // JSDoc for type hinting (optional, but good for clarity)
+    /** @typedef {{x: number, y: number, id: number, phase: number, appeared: boolean, alpha: number, radius: number, flare: number}} Point */
+    /** @typedef {{p1: Point, p2: Point, id: number, phase: number, progress: number, alpha: number, energy: number}} Line */
+    /** @typedef {{x: number, y: number, vx: number, vy: number, life: number, maxLife: number, size: number, color: string, type: 'trace' | 'ambient' | 'burst', targetLineId?: number, lineProgress?: number}} Particle */
+
+    let allPoints = [];
+    let allLines = [];
     const particles = [];
     let pointIdCounter = 0;
+    let lineIdCounter = 0;
 
-    // --- START: Shape Definition and Plexus Logic (from Plexus Lightbulb v2) ---
-    function defineBulbPoints() {
-        bulbPoints = [];
-        pointIdCounter = 0;
+    // Easing function for smoother animations
+    function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+    function createPointsForShape(shapeFunc, phase) {
+        return shapeFunc().map((p, index, arr) => ({
+            ...p,
+            id: pointIdCounter++,
+            phase,
+            appeared: false,
+            alpha: 0,
+            radius: p.radius || (phase === 1 ? 1.7 : 1.4) * (currentWidth / 300), // Base radius
+            flare: 0 // For spawn animation
+        }));
+    }
+
+    function createLinesForPoints(points, phase, maxDistFactor, connectionProbability = 0.6, isStructural = false) {
+        const lines = [];
+        const maxDist = currentWidth * maxDistFactor;
+        const relevantPoints = points.filter(p => p.phase <= phase); // Only connect points that should exist by this phase
+
+        for (let i = 0; i < relevantPoints.length; i++) {
+            for (let j = i + 1; j < relevantPoints.length; j++) {
+                const p1 = relevantPoints[i];
+                const p2 = relevantPoints[j];
+                // Don't connect points from different primary shapes unless intended
+                if (!isStructural && p1.shapeId !== p2.shapeId) continue;
+
+                const dx = p1.x - p2.x;
+                const dy = p1.y - p2.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < maxDist && dist > 1 && Math.random() < connectionProbability) {
+                    lines.push({ p1, p2, id: lineIdCounter++, phase, progress: 0, alpha: 0, energy: 0 });
+                }
+            }
+        }
+        return lines;
+    }
+
+    function getBulbShapePoints() {
+        const points = [];
         const bodyH = bulbOuterHeight() * bulbBodyRatio;
         const bodyCY = bulbTopY() + bodyH / 2;
-        const numEllipsePoints = 20;
-        for (let i = 0; i < numEllipsePoints; i++) {
-            const angle = (i / numEllipsePoints) * Math.PI * 2;
-            bulbPoints.push({
-                id: pointIdCounter++,
-                x: centerX() + (bulbOuterWidth() / 2) * Math.cos(angle),
-                y: bodyCY + (bodyH / 2) * Math.sin(angle),
-                spawnTime: Math.random() * 0.3,
-            });
-        }
+        const numEllipsePoints = 30;
+        // Phase 1: Base and Neck points
         const neckTY = bulbTopY() + bodyH;
         const neckH = bulbOuterHeight() * bulbNeckRatio;
         const neckBY = neckTY + neckH;
-        const neckWS = bulbOuterWidth() * 0.35;
-        const neckWE = bulbOuterWidth() * 0.3;
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() - neckWS / 2, y: neckTY, spawnTime: 0.1 });
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() + neckWS / 2, y: neckTY, spawnTime: 0.1 });
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() + neckWE / 2, y: neckBY, spawnTime: 0.15 });
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() - neckWE / 2, y: neckBY, spawnTime: 0.15 });
+        const neckWS = bulbOuterWidth() * 0.35; const neckWE = bulbOuterWidth() * 0.3;
         const baseTY = neckBY;
         const baseH = bulbOuterHeight() * (1 - bulbBodyRatio - bulbNeckRatio);
         const baseBY = baseTY + baseH;
         const baseW = bulbOuterWidth() * 0.35;
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() - baseW / 2, y: baseTY, spawnTime: 0.2 });
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() + baseW / 2, y: baseTY, spawnTime: 0.2 });
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() + baseW / 2, y: baseBY, spawnTime: 0.25 });
-        bulbPoints.push({ id: pointIdCounter++, x: centerX() - baseW / 2, y: baseBY, spawnTime: 0.25 });
+
+        // Base points (appear first)
+        for(let i=0; i<=2; i++) {
+            const t = i/2;
+            points.push({ x: centerX() - baseW/2, y: baseBY - baseH * t, shapeId: 'bulb_base' });
+            points.push({ x: centerX() + baseW/2, y: baseBY - baseH * t, shapeId: 'bulb_base' });
+        }
+        points.push({x: centerX(), y: baseBY, shapeId: 'bulb_base'}); // Center base
+
+        // Neck points
+        for(let i=0; i<=3; i++) {
+            const t = i/3;
+            points.push({ x: centerX() - (neckWE/2 + (neckWS-neckWE)/2 * (1-t)), y: neckBY - neckH * t, shapeId: 'bulb_neck'});
+            points.push({ x: centerX() + (neckWE/2 + (neckWS-neckWE)/2 * (1-t)), y: neckBY - neckH * t, shapeId: 'bulb_neck'});
+        }
+
+        // Phase 2: Bulbous part points
+        for (let i = 0; i < numEllipsePoints; i++) {
+            const angle = (i / numEllipsePoints) * Math.PI * 2;
+            const rX = (bulbOuterWidth() / 2) * (0.95 + Math.sin(angle * 5 + globalTime * 0.01) * 0.05); // Subtle breathing
+            const rY = (bodyH / 2) * (0.95 + Math.cos(angle * 3 + globalTime * 0.01) * 0.05);
+            points.push({
+                x: centerX() + rX * Math.cos(angle),
+                y: bodyCY + rY * Math.sin(angle),
+                shapeId: 'bulb_body'
+            });
+        }
+        return points;
     }
 
-    function defineRecycleSymbolPoints() {
-        recycleSymbolPoints = [];
-        recycleSymbolLines = [];
-        const symbolSize = bulbOuterWidth() * 0.35;
-        const symbolCenterY = bulbTopY() + (bulbOuterHeight() * bulbBodyRatio) / 2;
-        const armLength = symbolSize / 2;
-        const armThickness = symbolSize / 5;
+    function getRecycleSymbolPoints() {
+        const points = [];
+        const symbolSize = bulbOuterWidth() * 0.28; // Slightly smaller symbol
+        const symbolCenterY = bulbTopY() + (bulbOuterHeight() * bulbBodyRatio) / 2.1; // Position
+        const armRadius = symbolSize * 0.45;
+        const arrowHeadSize = symbolSize * 0.2;
+        const arrowBodyWidth = symbolSize * 0.1;
+
         for (let i = 0; i < 3; i++) {
-            const angle = (i / 3) * Math.PI * 2 + Math.PI / 6;
-            const x1 = centerX() + Math.cos(angle) * armLength;
-            const y1 = symbolCenterY + Math.sin(angle) * armLength;
-            const x2 = centerX() + Math.cos(angle) * (armLength - armThickness * 1.5);
-            const y2 = symbolCenterY + Math.sin(angle) * (armLength - armThickness * 1.5);
-            const x3 = centerX() + Math.cos(angle + Math.PI / 3) * (armLength - armThickness * 0.5);
-            const y3 = symbolCenterY + Math.sin(angle + Math.PI / 3) * (armLength - armThickness * 0.5);
-            const pTip = { id: pointIdCounter++, x: x1, y: y1, spawnTime: 0.3 + i * 0.05 };
-            const pInner = { id: pointIdCounter++, x: x2, y: y2, spawnTime: 0.3 + i * 0.05 };
-            const pBend = { id: pointIdCounter++, x: x3, y: y3, spawnTime: 0.35 + i * 0.05 };
-            recycleSymbolPoints.push(pTip, pInner, pBend);
+            const angle = (i / 3) * Math.PI * 2 + Math.PI / 1.5; // Initial rotation for arrows
 
-            const pNextInnerIndex = ((i + 1) % 3) * 3 + 1;
-            // Ensure pNextInner exists, especially for the last iteration
-            const pNextInner = recycleSymbolPoints[pNextInnerIndex] || pInner; // Fallback to pInner if index is out of bounds temporarily
+            // Tip
+            const tipX = centerX() + Math.cos(angle) * armRadius;
+            const tipY = symbolCenterY + Math.sin(angle) * armRadius;
+            points.push({ x: tipX, y: tipY, shapeId: `arrow${i}` });
 
-            recycleSymbolLines.push({ p1: pTip, p2: pBend, spawnTime: 0.4 + i * 0.05 });
-            recycleSymbolLines.push({ p1: pBend, p2: pNextInner, spawnTime: 0.45 + i * 0.05 });
-            recycleSymbolLines.push({ p1: pInner, p2: pBend, spawnTime: 0.42 + i * 0.05 });
+            // Head base points
+            points.push({ x: tipX - Math.cos(angle + Math.PI / 3.5) * arrowHeadSize, y: tipY - Math.sin(angle + Math.PI / 3.5) * arrowHeadSize, shapeId: `arrow${i}` });
+            points.push({ x: tipX - Math.cos(angle - Math.PI / 3.5) * arrowHeadSize, y: tipY - Math.sin(angle - Math.PI / 3.5) * arrowHeadSize, shapeId: `arrow${i}` });
+
+            // Inner curve control point (for a smoother arrow body)
+            const controlAngle = angle + Math.PI / 3; // Towards the center of the bend
+            points.push({
+                x: centerX() + Math.cos(controlAngle) * armRadius * 0.7,
+                y: symbolCenterY + Math.sin(controlAngle) * armRadius * 0.7,
+                shapeId: `arrow${i}_curve`
+            });
+
+            // Tail point (connects to next arrow's inner part)
+            const tailAngle = angle + (Math.PI * 2 / 3) * 0.65; // Angle for the tail end
+            points.push({
+                 x: centerX() + Math.cos(tailAngle) * armRadius * 0.5,
+                 y: symbolCenterY + Math.sin(tailAngle) * armRadius * 0.5,
+                 shapeId: `arrow${i}_tail`
+            });
         }
+        return points;
     }
 
-    function createPlexusLines(points, lines, maxDistFactor = 0.3) {
-        lines.length = 0;
-        const maxDist = currentWidth * maxDistFactor;
-        for (let i = 0; i < points.length; i++) {
-            for (let j = i + 1; j < points.length; j++) {
-                const p1 = points[i]; const p2 = points[j];
-                const dx = p1.x - p2.x; const dy = p1.y - p2.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < maxDist && dist > 1) {
-                    lines.push({ p1, p2, spawnTime: (p1.spawnTime + p2.spawnTime) / 2 + 0.1 });
-                }
-            }
-        }
+
+    function initializeStructures() {
+        pointIdCounter = 0; lineIdCounter = 0; particles.length = 0;
+        const rawBulbPoints = getBulbShapePoints();
+        const rawRecyclePoints = getRecycleSymbolPoints();
+
+        // Assign phases based on order (example: base, then neck, then body, then symbol)
+        allPoints = [
+            ...rawBulbPoints.slice(0, 7).map(p => ({ ...p, id: pointIdCounter++, phase: 1, appeared: false, alpha: 0, radius: 1.8, flare: 0 })), // Base
+            ...rawBulbPoints.slice(7, 15).map(p => ({ ...p, id: pointIdCounter++, phase: 2, appeared: false, alpha: 0, radius: 1.6, flare: 0 })), // Neck
+            ...rawBulbPoints.slice(15).map(p => ({ ...p, id: pointIdCounter++, phase: 3, appeared: false, alpha: 0, radius: 1.5, flare: 0 })), // Body
+            ...rawRecyclePoints.map(p => ({ ...p, id: pointIdCounter++, phase: 4, appeared: false, alpha: 0, radius: 1.3, flare: 0 })) // Symbol
+        ];
+
+        // Create lines based on phases
+        allLines = [
+            ...createLinesForPoints(allPoints.filter(p => p.phase <= 1), 1, 0.2, 0.9, true), // Bulb base structural
+            ...createLinesForPoints(allPoints.filter(p => p.phase <= 2), 2, 0.25, 0.8, true), // Bulb neck structural
+            ...createLinesForPoints(allPoints.filter(p => p.phase <= 3), 3, 0.2, 0.5), // Bulb body plexus
+            ...createLinesForPoints(allPoints.filter(p => p.phase === 4), 4, 0.5, 0.9, true)  // Symbol structural lines (denser)
+        ];
     }
 
-    function drawStructure(points, lines, pointColor, lineColor, pointSize, lineWidth) {
-        lines.forEach(line => {
-            if (formationProgress >= line.spawnTime) {
-                const lineProg = Math.min(1, (formationProgress - line.spawnTime) / 0.4);
-                if (lineProg > 0) {
-                    ctx.beginPath(); ctx.moveTo(line.p1.x, line.p1.y);
-                    ctx.lineTo(line.p1.x + (line.p2.x - line.p1.x) * lineProg, line.p1.y + (line.p2.y - line.p1.y) * lineProg);
-                    ctx.strokeStyle = lineColor; ctx.lineWidth = lineWidth * (currentWidth / 300);
-                    ctx.globalAlpha = lineProg * 0.6 + Math.sin(globalTime * 0.001 + line.p1.id) * 0.1 + 0.1;
-                    ctx.stroke();
-                }
-            }
-        });
-        ctx.globalAlpha = 1;
-        points.forEach(point => {
-            if (formationProgress >= point.spawnTime) {
-                const pointProg = Math.min(1, (formationProgress - point.spawnTime) / 0.2);
-                if (pointProg > 0) {
-                    ctx.beginPath(); ctx.arc(point.x, point.y, pointSize * pointProg * (currentWidth / 300), 0, Math.PI * 2);
-                    ctx.fillStyle = pointColor;
-                    ctx.globalAlpha = pointProg * 0.8 + Math.sin(globalTime * 0.0015 + point.id) * 0.2;
+
+    // --- Drawing Functions ---
+    function draw() {
+        ctx.clearRect(0, 0, currentWidth, currentHeight);
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, currentWidth, currentHeight);
+
+        const easedProgress = easeInOutCubic(mainFormationProgress);
+
+        // Update and Draw Points
+        allPoints.forEach(p => {
+            const phaseStartTime = (p.phase - 1) * 0.20; // Stagger phase starts
+            const phaseDuration = 0.3; // Duration for points in a phase to appear
+
+            if (easedProgress >= phaseStartTime) {
+                const pointLocalProgress = Math.min(1, (easedProgress - phaseStartTime) / phaseDuration);
+                p.alpha += (pointLocalProgress - p.alpha) * 0.15; // Smoother fade in
+
+                if (p.alpha > 0.01) {
+                    p.appeared = true;
+                    ctx.beginPath();
+                    // Flare effect on spawn
+                    if (pointLocalProgress < 0.5 && pointLocalProgress > 0) {
+                        p.flare = Math.sin(pointLocalProgress * Math.PI) * p.radius * 1.5; // Flare grows then shrinks
+                    } else {
+                        p.flare *= 0.85; // Fade out flare
+                    }
+                    const currentRadius = p.radius * p.alpha * (1 + Math.sin(globalTime * 0.08 + p.id * 0.6) * 0.15); // Subtle pulse
+                    ctx.arc(p.x, p.y, currentRadius + p.flare, 0, Math.PI * 2);
+                    ctx.fillStyle = p.phase <= 3 ? bulbAccentColor : recycleAccentColor;
+                    ctx.globalAlpha = p.alpha * (p.phase <=3 ? 0.7 : 0.9);
                     ctx.fill();
                 }
             }
         });
         ctx.globalAlpha = 1;
-    }
 
-    function manageParticles() {
-        if (formationProgress > 0.9 && particles.length < 40 && Math.random() < 0.15) {
-            const allLines = [...bulbLines, ...recycleSymbolLines].filter(l => formationProgress >= l.spawnTime + 0.3);
-            if (allLines.length > 0) {
-                const line = allLines[Math.floor(Math.random() * allLines.length)];
-                const startAtP1 = Math.random() < 0.5;
-                const p = startAtP1 ? line.p1 : line.p2;
-                const target = startAtP1 ? line.p2 : line.p1;
+        // Update and Draw Lines
+        allLines.forEach(l => {
+            if (l.p1.appeared && l.p2.appeared) {
+                const phaseStartTime = (l.phase - 1) * 0.20 + 0.1; // Lines start after points in their phase
+                const lineDuration = 0.4;
+                 if (easedProgress >= phaseStartTime) {
+                    const lineLocalProgress = Math.min(1, (easedProgress - phaseStartTime) / lineDuration);
+                    l.progress += (lineLocalProgress - l.progress) * 0.1; // Smooth trace
+
+                    if (l.progress > 0.01) {
+                        ctx.beginPath();
+                        const startX = l.p1.x;
+                        const startY = l.p1.y;
+                        const endX = l.p1.x + (l.p2.x - l.p1.x) * l.progress;
+                        const endY = l.p1.y + (l.p2.y - l.p1.y) * l.progress;
+                        ctx.moveTo(startX, startY);
+                        ctx.lineTo(endX, endY);
+
+                        ctx.strokeStyle = l.phase <= 3 ? plexusLineColor : recyclePlexusLineColor;
+                        ctx.lineWidth = (l.phase <= 3 ? 0.35 : 0.55) * (currentWidth / 300);
+                        l.alpha += (l.progress - l.alpha) * 0.15;
+                        ctx.globalAlpha = l.alpha * (l.phase <=3 ? 0.5 : 0.7) + Math.sin(globalTime * 0.1 + l.id * 0.4) * 0.05; // Shimmer
+                        ctx.stroke();
+
+                        // Line trace particle
+                        if (l.progress > 0.05 && l.progress < 0.98 && mainFormationProgress < 0.95) {
+                             ctx.beginPath();
+                             ctx.arc(endX, endY, 1.2 * (currentWidth/300), 0, Math.PI*2);
+                             ctx.fillStyle = l.phase <=3 ? bulbColor : recycleSymbolColor;
+                             ctx.globalAlpha = 0.8;
+                             ctx.fill();
+                        }
+                    }
+                }
+            }
+        });
+        ctx.globalAlpha = 1;
+
+        // Manage and Draw Particles
+        if (mainFormationProgress > 0.85 && particles.length < 70 && Math.random() < 0.25) { // More particles
+            const point = allPoints[Math.floor(Math.random() * allPoints.length)];
+            if (point && point.appeared && point.alpha > 0.5) {
                 particles.push({
-                    x: p.x, y: p.y, startX: p.x, startY: p.y,
-                    targetX: target.x, targetY: target.y,
-                    speed: (0.01 + Math.random() * 0.02) * particleSpeedFactor,
-                    progress: 0, life: 1, maxLife: 60 + Math.random() * 60, color: particleColor,
+                    x: point.x, y: point.y,
+                    vx: (Math.random() - 0.5) * 0.8, vy: (Math.random() - 0.5) * 0.8, // More energetic
+                    life: 1, maxLife: 50 + Math.random() * 50,
+                    size: 0.6 + Math.random() * 0.7, color: particleColor,
+                    type: 'ambient'
                 });
             }
         }
-        ctx.fillStyle = particleColor;
+
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
-            p.progress += p.speed; p.x = p.startX + (p.targetX - p.startX) * p.progress;
-            p.y = p.startY + (p.targetY - p.startY) * p.progress; p.life -= 1 / p.maxLife;
-            if (p.life <= 0 || p.progress >= 1) { particles.splice(i, 1); continue; }
-            ctx.beginPath(); ctx.arc(p.x, p.y, (0.8 + Math.random() * 0.4) * p.life * (currentWidth / 300), 0, Math.PI * 2);
-            ctx.globalAlpha = p.life * 0.9; ctx.fill();
+            p.x += p.vx * particleSpeedFactor;
+            p.y += p.vy * particleSpeedFactor;
+            p.vx *= 0.98; // Dampening
+            p.vy *= 0.98;
+            p.life -= 1 / p.maxLife;
+
+            if (p.life <= 0 || p.x < 0 || p.x > currentWidth || p.y < 0 || p.y > currentHeight) {
+                particles.splice(i, 1); continue;
+            }
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * p.life * (currentWidth / 300), 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life * 0.7;
+            ctx.fill();
         }
         ctx.globalAlpha = 1;
     }
-    // --- END: Shape Definition and Plexus Logic ---
 
     let animationFrameId;
-    function render() {
+    function renderLoop() {
         globalTime++;
-        if (formationProgress < 1) {
-            formationProgress += growthSpeed;
-            formationProgress = Math.min(1, formationProgress);
+        if (mainFormationProgress < 1) {
+            mainFormationProgress += growthSpeed;
+            mainFormationProgress = Math.min(1, mainFormationProgress);
+        } else {
+            // Once fully formed, could slow down particle spawning or change effects
         }
-        ctx.clearRect(0, 0, currentWidth, currentHeight);
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, currentWidth, currentHeight);
-        drawStructure(bulbPoints, bulbLines, bulbColor, plexusLineColor, 1.8, 0.6);
-        if (formationProgress > 0.2) {
-            ctx.save();
-            drawStructure(recycleSymbolPoints, recycleSymbolLines, recycleSymbolColor, recyclePlexusLineColor, 1.4, 0.7);
-            ctx.restore();
-        }
-        manageParticles();
-        animationFrameId = requestAnimationFrame(render);
+        draw();
+        animationFrameId = requestAnimationFrame(renderLoop);
     }
 
-    // Initialize shapes
-    defineBulbPoints();
-    defineRecycleSymbolPoints();
-    createPlexusLines(bulbPoints, bulbLines, 0.35);
-    // recycleSymbolLines are defined in defineRecycleSymbolPoints
+    initializeStructures();
+    renderLoop();
 
-    render(); // Start the animation loop
-
-    // Cleanup function (not strictly needed if observer unobserves, but good practice)
     return () => {
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
 }
 // --- END: Plexus Lightbulb Animation ---
