@@ -294,22 +294,29 @@ function startSustainabilityAnimation() {
     function resizeCanvas() {
         const parent = canvas.parentElement;
         if (parent) {
-            const newWidth = Math.min(parent.clientWidth, 450); // Max width
-            currentWidth = newWidth > 0 ? newWidth : 300; // Ensure non-zero
+            const parentWidth = parent.clientWidth;
+            let targetWidth = parentWidth * 0.9;
+            const maxAllowedHeight = Math.min(window.innerHeight * 0.5, 300);
+            if (targetWidth * 1.3 > maxAllowedHeight) {
+                targetWidth = maxAllowedHeight / 1.3;
+            }
+            targetWidth = Math.max(150, Math.min(targetWidth, 300));
+            currentWidth = targetWidth;
             currentHeight = currentWidth * 1.3;
-
             const dpr = window.devicePixelRatio || 1;
             canvas.width = currentWidth * dpr;
             canvas.height = currentHeight * dpr;
             canvas.style.width = `${currentWidth}px`;
             canvas.style.height = `${currentHeight}px`;
             ctx.scale(dpr, dpr);
+            console.log(`DEBUG: Canvas resized to <span class="math-inline">\{currentWidth\}x</span>{currentHeight}`);
+        } else {
+            currentWidth = canvas.width / (window.devicePixelRatio || 1);
+            currentHeight = canvas.height / (window.devicePixelRatio || 1);
+             console.log(`DEBUG: Canvas using default/attribute size <span class="math-inline">\{currentWidth\}x</span>{currentHeight}`);
         }
     }
-    resizeCanvas(); // Initial resize to set dimensions even before animation starts
-    // Optional: Consider adding a window resize listener if the parent's size can change
-    // window.addEventListener('resize', resizeCanvas);
-
+    resizeCanvas();
 
     // Animation variables (Plexus Lightbulb v2)
     const bulbColor = '#3F51B5';
