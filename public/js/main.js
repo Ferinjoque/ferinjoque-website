@@ -613,7 +613,8 @@ function animateOnScroll() {
 
 // --- START: Contact Form Logic with Cooldown ---
 let isFormSubmitting = false; // Flag for cooldown
-const COOLDOWN_PERIOD_MS = 120000; // 2 min cooldown
+const COOLDOWN_PERIOD_MS = 120000; // 2m cooldown
+let cooldownTimerInterval = null; // Variable to hold the interval ID for the countdown
 
 if (contactForm) {
     const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -650,7 +651,6 @@ if (contactForm) {
             submitButton.disabled = true;
             submitButton.textContent = 'Sending...';
         }
-        // Clear any previous form messages
         const existingMessage = document.querySelector('.form-message');
         if (existingMessage) existingMessage.remove();
 
@@ -667,9 +667,9 @@ if (contactForm) {
                         body: formData
                     })
                     .then(res => {
-                        if (!res.ok) { // Check for non-2xx responses
+                        if (!res.ok) {
                            return res.json().then(errData => {
-                                throw {jsonError: errData, status: res.status}; // Throw an object to catch later
+                                throw {jsonError: errData, status: res.status};
                            });
                         }
                         return res.json();
@@ -679,7 +679,6 @@ if (contactForm) {
                             showFormMessage('Message sent! I’ll get back to you soon.', 'success');
                             contactForm.reset();
                         } else {
-                            // Formspree specific error handling (already good)
                             const msg = json.errors ? json.errors.map(err => err.message).join(', ') : 'Oops! Something went wrong.';
                             showFormMessage(msg, 'error');
                         }
@@ -694,23 +693,35 @@ if (contactForm) {
                         }
                     })
                     .finally(() => {
-                        // Cooldown logic starts AFTER fetch completes (success or error)
+                        // Start cooldown with countdown timer
                         if (submitButton) {
-                            submitButton.textContent = `Wait ${COOLDOWN_PERIOD_MS / 1000}s`;
-                        }
-                        setTimeout(() => {
-                            isFormSubmitting = false;
-                            if (submitButton) {
-                                submitButton.disabled = false;
-                                submitButton.textContent = originalButtonText;
+                            let secondsRemaining = COOLDOWN_PERIOD_MS / 1000;
+                            submitButton.textContent = `Wait ${secondsRemaining}s`;
+                            // Clear any existing interval before starting a new one
+                            if (cooldownTimerInterval) {
+                                clearInterval(cooldownTimerInterval);
                             }
-                        }, COOLDOWN_PERIOD_MS);
+                            cooldownTimerInterval = setInterval(() => {
+                                secondsRemaining--;
+                                if (secondsRemaining > 0) {
+                                    submitButton.textContent = `Wait ${secondsRemaining}s`;
+                                } else {
+                                    clearInterval(cooldownTimerInterval);
+                                    isFormSubmitting = false;
+                                    submitButton.disabled = false;
+                                    submitButton.textContent = originalButtonText;
+                                }
+                            }, 1000);
+                        } else { // Fallback if button not found, just use timeout
+                             setTimeout(() => {
+                                isFormSubmitting = false;
+                             }, COOLDOWN_PERIOD_MS);
+                        }
                     });
                 })
                 .catch(recaptchaError => {
                     console.error("reCAPTCHA execution error:", recaptchaError);
                     showFormMessage('Failed to verify reCAPTCHA. Please try again.', 'error');
-                    // Reset submitting state if reCAPTCHA fails
                     isFormSubmitting = false;
                     if (submitButton) {
                         submitButton.disabled = false;
