@@ -611,47 +611,116 @@ function animateOnScroll() {
     });
 }
 
-// Contact Form Logic
+// --- START: Contact Form Logic with Cooldown ---
+let isFormSubmitting = false; // Flag for cooldown
+const COOLDOWN_PERIOD_MS = 120000; // 2 min cooldown
+
 if (contactForm) {
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton ? submitButton.textContent : "Send Message";
+
     contactForm.addEventListener('submit', e => {
         e.preventDefault();
+
+        if (isFormSubmitting) {
+            showFormMessage('Please wait before submitting again.', 'error');
+            return;
+        }
+
         const data = Object.fromEntries(new FormData(contactForm));
         if (!data.name || !data.email || !data.message) {
-            showFormMessage('Please fill in all fields', 'error'); return;
+            showFormMessage('Please fill in all fields', 'error');
+            return;
         }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(data.email)) {
-            showFormMessage('Please enter a valid email address', 'error'); return;
+            showFormMessage('Please enter a valid email address', 'error');
+            return;
         }
+
         if (typeof grecaptcha === 'undefined' || typeof grecaptcha.ready !== 'function') {
             showFormMessage('reCAPTCHA is not ready. Please wait or refresh.', 'error');
-            console.error("reCAPTCHA object not ready for form submission."); return;
+            console.error("reCAPTCHA object not ready for form submission.");
+            return;
         }
+
+        // Start submitting state
+        isFormSubmitting = true;
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+        }
+        // Clear any previous form messages
+        const existingMessage = document.querySelector('.form-message');
+        if (existingMessage) existingMessage.remove();
+
+
         grecaptcha.ready(() => {
             grecaptcha.execute('6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v', { action: 'contact' })
                 .then(token => {
                     const formData = new FormData(contactForm);
                     formData.append('g-recaptcha-response', token);
+
                     fetch('https://formspree.io/f/xblgnwdw', {
                         method: 'POST',
                         headers: { 'Accept': 'application/json' },
                         body: formData
                     })
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) { // Check for non-2xx responses
+                           return res.json().then(errData => {
+                                throw {jsonError: errData, status: res.status}; // Throw an object to catch later
+                           });
+                        }
+                        return res.json();
+                    })
                     .then(json => {
                         if (json.ok) {
                             showFormMessage('Message sent! I’ll get back to you soon.', 'success');
                             contactForm.reset();
                         } else {
-                            const msg = json.errors ? json.errors.map(e => e.message).join(', ') : 'Oops! Something went wrong.';
+                            // Formspree specific error handling (already good)
+                            const msg = json.errors ? json.errors.map(err => err.message).join(', ') : 'Oops! Something went wrong.';
                             showFormMessage(msg, 'error');
                         }
                     })
-                    .catch(() => showFormMessage('Network error. Please try again later.', 'error'));
+                    .catch(error => {
+                        console.error("Form submission error:", error);
+                        if (error.jsonError && error.jsonError.errors) {
+                             const msg = error.jsonError.errors.map(e => e.message).join(', ');
+                             showFormMessage(msg, 'error');
+                        } else {
+                            showFormMessage('Network error or submission failed. Please try again later.', 'error');
+                        }
+                    })
+                    .finally(() => {
+                        // Cooldown logic starts AFTER fetch completes (success or error)
+                        if (submitButton) {
+                            submitButton.textContent = `Wait ${COOLDOWN_PERIOD_MS / 1000}s`;
+                        }
+                        setTimeout(() => {
+                            isFormSubmitting = false;
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.textContent = originalButtonText;
+                            }
+                        }, COOLDOWN_PERIOD_MS);
+                    });
+                })
+                .catch(recaptchaError => {
+                    console.error("reCAPTCHA execution error:", recaptchaError);
+                    showFormMessage('Failed to verify reCAPTCHA. Please try again.', 'error');
+                    // Reset submitting state if reCAPTCHA fails
+                    isFormSubmitting = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalButtonText;
+                    }
                 });
         });
     });
 }
+// --- END: Contact Form Logic with Cooldown ---
 
 // Function to display form submission messages
 function showFormMessage(message, type) {
