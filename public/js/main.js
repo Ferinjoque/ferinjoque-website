@@ -239,26 +239,7 @@ document.addEventListener('cookieyes_consent_update', function(event) {
 window.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: DOMContentLoaded. Initializing non-analytics UI elements.");
 
-    // Scroll-triggered animations for project cards, timeline items, and skill categories
-    const animatedElements = document.querySelectorAll('.project-card, .timeline-item, .skill-category');
-    if (animatedElements.length > 0) {
-        const animationObserverOptions = {
-            threshold: 0.1, // Trigger when 10% of the element is visible
-            // rootMargin: '0px 0px -50px 0px' // Optional: Adjust if elements are animating too early/late
-        };
-
-        const animationCallback = (entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('fadeIn');
-                    observer.unobserve(entry.target); // Stop observing after animation
-                }
-            });
-        };
-
-        const scrollAnimationObserver = new IntersectionObserver(animationCallback, animationObserverOptions);
-        animatedElements.forEach(el => scrollAnimationObserver.observe(el));
-    }
+    animateOnScroll();
 
     const heroElements = document.querySelectorAll('.hero h1, .hero h2, .hero-description, .cta-container');
     heroElements.forEach((el, index) => {
@@ -566,7 +547,7 @@ window.addEventListener('scroll', () => {
         header.classList.remove('scrolled');
     }
     highlightActiveSection();
-    // animateOnScroll(); // Removed: Replaced by IntersectionObserver
+    animateOnScroll();
 });
 
 // Mobile menu toggle
@@ -618,8 +599,18 @@ function highlightActiveSection() {
     });
 }
 
-// Removed: animateOnScroll() function. Its functionality is now handled by an IntersectionObserver
-// defined within the DOMContentLoaded event listener.
+// Function to animate elements when they come into view
+function animateOnScroll() {
+    const animateElements = document.querySelectorAll('.project-card, .timeline-item, .skill-category');
+    animateElements.forEach(el => {
+        const elementPosition = el.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        
+        if (elementPosition < windowHeight * 0.9) {
+            el.classList.add('fadeIn');
+        }
+    });
+}
 
 // --- START: Contact Form Logic with Cooldown ---
 let isFormSubmitting = false; // Flag for cooldown
