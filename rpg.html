@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eco-Echoes: An AI Chronicle | Fernando Injoque</title>
-    <meta name="description" content="A text-based RPG exploring themes of AI and sustainability.">
+    <meta name="description" content="A text-based RPG exploring themes of AI and sustainability, powered by generative AI.">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/css/rpg-styles.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
 </head>
-<body>
+<body class="rpg-body"> {/* Added rpg-body class for flex layout */}
     <div class="noise"></div>
 
     <header class="rpg-header">
@@ -38,11 +38,19 @@
             <p>Initializing GAIA Prime interface...</p>
         </div>
 
-        <div id="choices-output" class="choices-panel">
-            </div>
+        {/* New: Loading indicator */}
+        <div id="ai-loading-indicator" class="loading-indicator" style="display:none;">
+            <p>GAIA Prime is processing...</p>
+            <div class="spinner"></div>
+        </div>
+
+        {/* New: Panel for AI-suggested choices */}
+        <div id="ai-choices-panel" class="choices-panel ai-choices">
+            {/* AI-generated choices will be populated here by rpg.js */}
+        </div>
 
         <div class="input-panel">
-            <input type="text" id="player-input" class="player-input-field" placeholder="Enter your command...">
+            <input type="text" id="player-input" class="player-input-field" placeholder="Enter your command..." autofocus>
             <button id="submit-command" class="cta-button rpg-submit-button">Send</button>
         </div>
 
@@ -62,7 +70,7 @@
             <div class="status-item inventory-container">
                 <span class="inventory-title"><span class="material-icons status-icon">inventory_2</span>Inventory:</span>
                 <div id="inventory-items" class="inventory-items-list">
-                    <p class="inventory-empty-message">Empty</p> 
+                    <p class="inventory-empty-message">Empty</p>
                 </div>
             </div>
         </div>
@@ -73,7 +81,20 @@
             <button id="close-help-modal" class="close-button" title="Close Help">&times;</button>
             <div id="help-modal-content">
                 <h3>Help</h3>
-                <p>Loading help content...</p>
+                <p>Interact by typing commands or clicking suggested actions.</p>
+                <p>Common commands:
+                    <ul>
+                        <li><strong>look around</strong>: Get a description of your surroundings.</li>
+                        <li><strong>examine [thing/person]</strong>: Get more details.</li>
+                        <li><strong>take [item]</strong>: Pick up an item.</li>
+                        <li><strong>use [item]</strong> or <strong>use [item] on [target]</strong></li>
+                        <li><strong>inventory</strong> or <strong>i</strong>: Check your items.</li>
+                        <li><strong>status</strong>: Check your current status.</li>
+                        <li><strong>talk to [person]</strong></li>
+                        <li>Or, try describing what you want to do, like "try to open the door" or "ask the robot about the power fluctuations".</li>
+                    </ul>
+                </p>
+                <p>The AI will interpret your actions and describe what happens next. Keywords in the story text <span class="commandable-keyword">like this</span> are often interactive.</p>
             </div>
         </div>
     </div>
@@ -81,7 +102,7 @@
     <footer class="rpg-footer">
         <div class="container">
             <p>&copy; 2025 Fernando Injoque | <a href="/privacy-policy.html">Privacy & Cookie Policy</a></p>
-            <p class="eco-info">Eco-Echoes: Designed with sustainability narratives in mind.</p>
+            <p class="eco-info">Eco-Echoes: An AI-driven narrative exploring sustainability.</p>
         </div>
     </footer>
 
