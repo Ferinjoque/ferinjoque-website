@@ -3,3 +3,8 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/track/deno.json"
 entrypoint = "./functions/track/index.ts"
+
+[functions.rpg-ai-engine]
+  verify_jwt = false  # Crucial for allowing calls without a user JWT (resolves 401)
+  import_map = "./functions/rpg-ai-engine/deno.json" # Points to the function-specific deno.json
+  # enabled = true # This is often default, can be omitted
