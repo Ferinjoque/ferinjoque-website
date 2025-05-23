@@ -166,12 +166,8 @@ function highlightKeywords(line, sceneDef) {
 // Function to scroll the main window to the top of the storyOutput element
 function scrollWindowToStoryOutput() {
     if (storyOutput) {
-        // Get the position of the storyOutput relative to the viewport
-        const storyOutputRect = storyOutput.getBoundingClientRect();
-        // Scroll the window so that the top of storyOutput is at the top of the viewport
-        // window.scrollTo(0, window.pageYOffset + storyOutputRect.top); // Instant
         window.scrollTo({
-            top: window.pageYOffset + storyOutputRect.top - parseInt(getComputedStyle(document.querySelector('.rpg-header')).height || '60'), // Adjust for fixed header height
+            top: 0,
             behavior: 'smooth'
         });
     }
