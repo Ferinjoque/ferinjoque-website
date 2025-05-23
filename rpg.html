@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/css/rpg-styles.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
 </head>
-<body class="rpg-body"> {/* Added rpg-body class for flex layout */}
+<body class="rpg-body">
     <div class="noise"></div>
 
     <header class="rpg-header">
@@ -38,15 +38,12 @@
             <p>Initializing GAIA Prime interface...</p>
         </div>
 
-        {/* New: Loading indicator */}
         <div id="ai-loading-indicator" class="loading-indicator" style="display:none;">
             <p>GAIA Prime is processing...</p>
             <div class="spinner"></div>
         </div>
 
-        {/* New: Panel for AI-suggested choices */}
         <div id="ai-choices-panel" class="choices-panel ai-choices">
-            {/* AI-generated choices will be populated here by rpg.js */}
         </div>
 
         <div class="input-panel">
