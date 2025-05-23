@@ -37,7 +37,7 @@ const COMMON_KEYWORDS = [
     "diag_keycard", "return", "back"
 ];
 
-const story = { // Your existing story object...
+const story = { // Tu objeto story existente...
     intro: {
         onEnterText: [
             "Initializing GAIA Prime interface...",
@@ -67,7 +67,11 @@ const story = { // Your existing story object...
     search_console: {
         onEnterText: ["You search an auxiliary port on the console... and find a forgotten <span class='commandable-keyword'>Diagnostic Keycard</span>."],
         description: ["The auxiliary <span class='commandable-keyword'>port</span> is now open. The <span class='commandable-keyword'>Diagnostic Keycard</span> has been added to your <span class='commandable-keyword'>inventory</span>. You can <span class='commandable-keyword'>return</span> to main console functions."],
-        interactables: { /* ... */ },
+        interactables: {
+            "port": "An open auxiliary data port.",
+            "diagnostic keycard": "A small, metallic keycard. It's now in your <span class='commandable-keyword'>inventory</span>.",
+            "console": "The main console remains active."
+        },
         sceneActions: { "return": "intro", "go back": "intro" },
         onEnter: () => {
             addItemToInventory("diag_keycard", "Diagnostic Keycard");
@@ -75,10 +79,29 @@ const story = { // Your existing story object...
         }
     },
     anomaly_details: {
-        onEnterText: [ /* ... */ ],
-        description: [ /* ... */ () => playerHasItem("diag_keycard") ? "You can also <span class='commandable-keyword'>access advanced diagnostics</span> with your keycard." : "Advanced diagnostics are available, but require a keycard." ],
-        interactables: { /* ... */ },
-        sceneActions: { /* ... */ },
+        onEnterText: [
+            "Anomaly data stream incoming: Unidentified bio-signature fluctuations and energy spikes originating from the old Terraforming Unit 7.",
+            "Local AI Custodian, unit <span class='commandable-keyword'>Terra-3</span>, reports unusual organic growth patterns."
+        ],
+        description: [
+            "The <span class='commandable-keyword'>data stream</span> regarding the Gamma-7 anomaly is active on your display.",
+            "It highlights bio-signature spikes and energy readings from <span class='commandable-keyword'>Terraforming Unit 7</span>. Terra-3's <span class='commandable-keyword'>report</span> is also available.",
+            "You could <span class='commandable-keyword'>query Terra-3</span> for a visual, <span class='commandable-keyword'>analyze energy</span> signature, or <span class='commandable-keyword'>proceed to Gamma-7</span>.",
+            () => playerHasItem("diag_keycard") ? "You can also <span class='commandable-keyword'>access advanced diagnostics</span> with your keycard." : "Advanced diagnostics are available, but require a keycard."
+        ],
+        interactables: {
+            "data stream": "Constantly updating sensor readings from Gamma-7. Mostly raw data.",
+            "report": "Unit Terra-3's report: 'Unusual flora, rapid growth, energy patterns inconsistent. Requesting Warden guidance.' You can examine the full <span class='commandable-keyword'>terra-3 report</span>.",
+            "terra-3 report": "Full Report from Terra-3: 'Bio-signatures are unlike anything cataloged. Energy spikes show a unique quantum entanglement pattern. Recommend immediate on-site analysis by Warden. Potential for rapid escalation.'",
+            "terraforming unit 7": "Location of the anomaly. Records indicate it was decommissioned decades ago after the 'Silent Bloom' incident.",
+            "terra-3": "The local AI Custodian for Sector Gamma-7. You could try to <span class='commandable-keyword'>query terra-3</span>."
+        },
+        sceneActions: {
+            "query terra-3": "terra_3_visual", "analyze energy": "energy_analysis",
+            "proceed to gamma-7": "gamma_7_arrival",
+            "access advanced diagnostics": () => playerHasItem("diag_keycard") ? "advanced_diagnostics" : "diagnostics_no_keycard",
+            "back": "intro", "return": "intro"
+        },
         onEnter: () => { gameState.firstLookInScene = true; }
     },
     diagnostics_no_keycard: { /* ... */ },
@@ -96,8 +119,6 @@ const story = { // Your existing story object...
 function addItemToInventory(itemId, itemName) {
     if (!playerHasItem(itemId)) {
         gameState.inventory.push({ id: itemId, name: itemName });
-        // displayText will be called by updateStatusDisplay indirectly through renderScene or handlePlayerCommand
-        // For immediate feedback:
         displayText(`System: ${itemName} added to inventory.`, false, 'system-message', true);
     }
 }
@@ -142,15 +163,20 @@ function highlightKeywords(line, sceneDef) {
     return highlightedLine;
 }
 
-function scrollToStoryOutputTop(smooth = false) {
+// Function to scroll the main window to the top of the storyOutput element
+function scrollWindowToStoryOutput() {
     if (storyOutput) {
-        if (smooth) {
-            storyOutput.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            storyOutput.scrollTop = 0;
-        }
+        // Get the position of the storyOutput relative to the viewport
+        const storyOutputRect = storyOutput.getBoundingClientRect();
+        // Scroll the window so that the top of storyOutput is at the top of the viewport
+        // window.scrollTo(0, window.pageYOffset + storyOutputRect.top); // Instant
+        window.scrollTo({
+            top: window.pageYOffset + storyOutputRect.top - parseInt(getComputedStyle(document.querySelector('.rpg-header')).height || '60'), // Adjust for fixed header height
+            behavior: 'smooth'
+        });
     }
 }
+
 function scrollToStoryOutputBottom() {
     if (storyOutput) {
         storyOutput.scrollTop = storyOutput.scrollHeight;
@@ -162,7 +188,7 @@ async function typeText(element, textLines, sceneDef) {
     console.log("typeText started, isTyping:", gameState.isTyping);
     try {
         element.innerHTML = ''; 
-        scrollToStoryOutputTop(true); // Smooth scroll to top
+        scrollWindowToStoryOutput(); // Scroll main window smoothly to story output top
 
         for (const line of textLines) {
             let processedLine = typeof line === 'function' ? line() : line;
@@ -236,7 +262,7 @@ async function renderScene(sceneId) {
             console.log(`Executing onEnter for scene: ${sceneId}`);
             scene.onEnter();
         }
-        updateStatusDisplay(); // Call after onEnter and text display
+        updateStatusDisplay();
     } catch (error) {
         console.error("Error in renderScene:", error);
         storyOutput.innerHTML = '<p class="story-text-line system-message">Error rendering scene. Please try again or refresh.</p>';
@@ -290,12 +316,53 @@ async function handlePlayerCommand(command) {
                     if (target === "around" || target === "") {
                         gameState.firstLookInScene = false; 
                         nextSceneToRender = gameState.currentScene;
-                    } else { /* ... examine target logic ... */ }
+                    } else { 
+                        if (currentSceneDef.interactables && currentSceneDef.interactables[target]) {
+                            const interactable = currentSceneDef.interactables[target];
+                            const desc = typeof interactable === 'string' ? interactable : interactable.description || interactable.text || "It's a " + target + ".";
+                            displayText(desc, false, 'system-message', true);
+                        } else {
+                            displayText(`You don't see a "${target}" to look at closely.`, false, 'system-message', true);
+                        }
+                    }
                     commandHandled = true;
                     break;
-                case "examine": case "x": case "inspeccionar": /* ... examine logic ... */ commandHandled = true; break;
-                case "inventory": case "i": /* ... inventory logic ... */ commandHandled = true; break;
-                case "use": /* ... use logic ... */ commandHandled = true; break;
+                case "examine": case "x": case "inspeccionar":
+                    if (!target) { displayText("Examine what?", false, 'system-message', true); }
+                    else if (currentSceneDef.interactables && currentSceneDef.interactables[target]) {
+                        const interactable = currentSceneDef.interactables[target];
+                        const desc = typeof interactable === 'string' ? interactable : interactable.description || interactable.text || "It's a " + target + ".";
+                        displayText(desc, false, 'system-message', true);
+                    } else {
+                        displayText(`You find nothing special about the <span class="commandable-keyword">${target}</span>.`, false, 'system-message', true);
+                    }
+                    commandHandled = true;
+                    break;
+                case "inventory": case "i":
+                    let inventoryTextLines = [];
+                    if (gameState.inventory.length === 0) { inventoryTextLines.push("Your inventory is empty."); }
+                    else {
+                        inventoryTextLines.push("You are carrying:");
+                        gameState.inventory.forEach((item) => { inventoryTextLines.push(`- <span class="commandable-keyword">${item.name}</span>`); });
+                    }
+                    for (const line of inventoryTextLines) { displayText(line, false, 'system-message', true); }
+                    commandHandled = true;
+                    break;
+                case "use": 
+                    const itemToUseName = target.split(" on ")[0].trim();
+                    const useTargetObject = target.includes(" on ") ? target.split(" on ")[1].trim() : null;
+                    const itemInInventory = gameState.inventory.find(item => item.name.toLowerCase().includes(itemToUseName.toLowerCase()));
+
+                    if (itemInInventory) {
+                        displayText(`You attempt to use the ${itemInInventory.name}...`, false, 'system-message', true);
+                        // This is placeholder logic for 'use'. You'll need to expand this.
+                        // Example: Check currentSceneDef.itemUses[itemInInventory.id]
+                        displayText(`(Define what happens when ${itemInInventory.name} is used${useTargetObject ? ' on ' + useTargetObject : ''})`, false, 'system-message', true);
+                    } else {
+                        displayText("You don't have that item.", false, 'system-message', true);
+                    }
+                    commandHandled = true;
+                    break;
                 case "help": case "?": case "ayuda":
                     showHelpModal(); 
                     commandHandled = true;
@@ -308,14 +375,13 @@ async function handlePlayerCommand(command) {
         } else if (!commandHandled) {
              displayText("I didn't understand that. Type `<span class=\"commandable-keyword\">help</span>` for common commands.", false, 'system-message', true);
         }
-        // If command was handled but didn't change scene (e.g. inventory, examine), no explicit re-render is needed here
-        // as displayText already updated the output.
 
     } catch (error) {
         console.error("Error in handlePlayerCommand:", error);
         displayText("An error occurred processing your command.", false, 'system-message', true);
     } finally {
-        if (playerInput && document.activeElement !== playerInput && !helpModal?.style.display || helpModal.style.display === 'none') {
+        // Re-focus input only if help modal is not shown
+        if (playerInput && document.activeElement !== playerInput && (!helpModal || helpModal.style.display === 'none')) {
             setTimeout(() => playerInput.focus(), 0); 
         }
         console.log("handlePlayerCommand finished.");
@@ -326,11 +392,11 @@ async function handlePlayerCommand(command) {
 function showHelpModal() {
     if (!helpModal || !helpContent) { console.error("Help modal elements not found!"); return; }
     console.log("Showing help modal...");
-    // FIX: Use COMMON_KEYWORDS here, not COMMON_VERBS
-    const commonVerbsText = COMMON_KEYWORDS.filter(k => 
+    // CORRECTED: Use COMMON_KEYWORDS here
+    const commonVerbsInHelp = COMMON_KEYWORDS.filter(k => 
         ["look", "examine", "use", "take", "go", "inventory", "help", "status", "search", "mirar", "examinar", "usar", "coger", "ir", "inventario", "ayuda", "estado", "buscar"]
-        .includes(k.toLowerCase())) // Filter to actual verbs if needed, or show all keywords
-        .map(v => `<span class="commandable-keyword">${v}</span>`).join(", ");
+        .includes(k.toLowerCase())); // You can refine this list for the help text
+    const commonVerbsText = commonVerbsInHelp.map(v => `<span class="commandable-keyword">${v}</span>`).join(", ");
     
     helpContent.innerHTML = `
         <h3>Common Commands</h3>
@@ -384,10 +450,12 @@ async function initializeGame() {
     
     const currentSceneData = story[gameState.currentScene];
     const initialTextArray = currentSceneData?.onEnterText || currentSceneData?.description || [""];
-    const flatInitialText = Array.isArray(initialTextArray) ? initialTextArray.flat().join("") : String(initialTextArray); // Fixed .length here
+    const flatInitialText = Array.isArray(initialTextArray) ? 
+        initialTextArray.map(line => typeof line === 'function' ? line() : line).join("") : 
+        String(typeof initialTextArray === 'function' ? initialTextArray() : initialTextArray);
     const initialTextLength = flatInitialText.length;
 
-    const guidanceMessageDelay = 200; // Faster fixed delay
+    const guidanceMessageDelay = 200; // Made guidance message appear even faster
     setTimeout(() => { 
         if (!gameState.isTyping) {
              displayText("Type `<span class=\"commandable-keyword\">look around</span>` to observe, or `<span class=\"commandable-keyword\">help</span>` for commands.", false, "system-message", true);
