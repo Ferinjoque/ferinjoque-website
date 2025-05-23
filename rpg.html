@@ -35,8 +35,7 @@
 
     <main id="game-container" class="container rpg-main">
         <div id="story-output" class="story-output-panel">
-            <p>Initializing GAIA Prime interface... Welcome, Warden.</p>
-            <p>System assessment: Critical environmental anomaly detected in Sector Gamma-7. Your guidance is required.</p>
+            <p>Initializing GAIA Prime interface...</p>
         </div>
 
         <div id="choices-output" class="choices-panel">
@@ -60,7 +59,6 @@
                 <span class="material-icons status-icon">memory</span>
                 <span>AI Core Sync: <span id="ai-sync">Optimal</span></span>
             </div>
-
             <div class="status-item inventory-container">
                 <span class="inventory-title"><span class="material-icons status-icon">inventory_2</span>Inventory:</span>
                 <div id="inventory-items" class="inventory-items-list">
@@ -70,6 +68,16 @@
         </div>
     </main>
 
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="close-help-modal" class="close-button" title="Close Help">&times;</button>
+            <div id="help-modal-content">
+                <h3>Help</h3>
+                <p>Loading help content...</p>
+            </div>
+        </div>
+    </div>
+
     <footer class="rpg-footer">
         <div class="container">
             <p>&copy; 2025 Fernando Injoque | <a href="/privacy-policy.html">Privacy & Cookie Policy</a></p>
@@ -78,5 +86,5 @@
     </footer>
 
     <script type="module" src="/js/rpg.js"></script>
-    </body>
+</body>
 </html>
