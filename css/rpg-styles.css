@@ -5,13 +5,13 @@
     --rpg-bg: var(--color-bg-alt, #111111);
     --rpg-text-color: var(--color-text, #eaeaea);
     --rpg-primary-color: var(--color-primary, #4CAF50);
-    --rpg-accent-color: var(--color-accent, #3F51B5);
+    --rpg-accent-color: var(--color-accent, #3F51B5); /* Azul para palabras clave y mensajes */
     --rpg-input-bg: rgba(0, 0, 0, 0.2);
-    --rpg-panel-bg: rgba(20, 20, 20, 0.7); /* Slightly more distinct panel background */
+    --rpg-panel-bg: rgba(20, 20, 20, 0.7);
     --rpg-border-color: rgba(255, 255, 255, 0.1);
 }
 
-body.rpg-body { /* You can add this class to body in rpg.html if needed for very specific overrides */
+body.rpg-body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -86,7 +86,6 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     line-height: 1.6;
 }
 
-/* Corregido: Aplicar a story-output-panel y p, y :last-child */
 .story-output-panel p.story-text-line:last-child {
     margin-bottom: 0 !important;
 }
@@ -98,52 +97,31 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     margin-bottom: 1em !important;
 }
 
-/* Panel de opciones (botones) */
+/* Estilo para Palabras Clave Comandables en el texto de la historia */
+.commandable-keyword {
+    color: var(--rpg-accent-color); /* Azul distintivo */
+    font-weight: 600; /* Un poco más de énfasis */
+    /* text-decoration: underline; */ /* Opcional: subrayado */
+    /* cursor: help; */ /* Opcional: cambia el cursor al pasar por encima */
+}
+
+
+/* Panel de opciones (botones) - Ya no se usa para lista de botones fijos */
 .choices-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem; /* Reducido el gap, ya que los botones tendrán margen */
-    margin-top: 1.5rem; /* Un poco más de espacio sobre las opciones */
-    min-height: 30px;
+    margin-top: 1rem; /* Mantenemos un margen por si se usa para algo más adelante */
+    /* min-height: 30px; */ /* Ya no es tan necesario si no hay botones por defecto */
+    /* Los estilos de display:flex, opacity, transition, etc., se eliminan o comentan */
+    /* ya que los botones fijos se han ido. */
 }
 
-.choice-button {
-    display: block;
-    width: 100%;
-    padding: 0.85rem 1.25rem;
-    background-color: var(--rpg-input-bg, rgba(0, 0, 0, 0.2));
-    color: var(--rpg-text-color, #eaeaea);
-    border: 1px solid var(--rpg-border-color, rgba(255, 255, 255, 0.1));
-    border-radius: var(--border-radius, 4px);
-    text-align: left;
-    cursor: pointer;
-    font-family: var(--font-sans);
-    margin-bottom: 0.6rem; /* Espacio entre botones de opción */
-    
-    /* Estilos iniciales para la animación de entrada escalonada */
-    opacity: 0;
-    transform: translateY(15px); /* Inicia un poco más abajo */
-    /* La animación se define, pero el delay lo aplica JS para el efecto escalonado */
-    /* O usamos una clase que JS añade con delay */
-    transition: opacity 0.35s ease-out, transform 0.35s ease-out; /* Usaremos transición en lugar de @keyframes para más simplicidad con JS */
-}
+/* .choice-button y .choice-button.choice-visible ya no son necesarios */
+/* para la animación escalonada de una lista de botones. */
+/* Si decides tener algún botón ocasional, puedes redefinir su estilo aquí. */
+/*
+.choice-button { ... }
+.choice-button.choice-visible { ... }
+*/
 
-.choice-button:last-child {
-    margin-bottom: 0;
-}
-
-/* Clase que JS añadirá a cada botón con un retraso para activar la transición */
-.choice-button.choice-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.choice-button:hover {
-    background-color: var(--rpg-primary-color, #4CAF50);
-    border-color: var(--rpg-primary-color, #4CAF50);
-    color: white;
-    /* La transición base del botón ya maneja el hover suavemente */
-}
 
 .input-panel {
     display: flex;
@@ -183,6 +161,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     color: var(--color-text-muted);
     font-size: 0.875rem;
     box-shadow: var(--shadow);
+    align-items: flex-start; /* Alinea los items al inicio si se envuelven */
 }
 
 .status-item {
@@ -194,6 +173,66 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 .status-icon {
     font-size: 1.1rem;
     color: var(--rpg-accent-color);
+}
+
+.inventory-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--rpg-border-color);
+    width: 100%;
+}
+
+.inventory-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--rpg-text-color);
+}
+
+.inventory-title .status-icon {
+    margin-right: 0.45rem;
+    color: var(--rpg-accent-color);
+}
+
+.inventory-items-list {
+    width: 100%;
+    padding-left: 5px;
+    max-height: 70px;
+    overflow-y: auto;
+}
+
+.inventory-empty-message {
+    font-style: italic;
+    font-size: 0.9em;
+    color: var(--color-text-muted);
+    padding: 2px 0;
+}
+
+.inventory-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.inventory-item {
+    font-size: 0.9em;
+    padding: 3px 0;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.system-message {
+    color: var(--rpg-accent-color); 
+    font-style: italic;
+    font-size: 0.95em;
+    margin-top: 0.6em !important;
+    margin-bottom: 0.6em !important;
 }
 
 .rpg-footer {
@@ -218,104 +257,105 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 .initial-load-fade {
     opacity: 0;
     animation: initialFadeIn 0.5s ease-out forwards;
-    /* El delay se puede ajustar en JS si es necesario, o dejarlo en 0.1s como antes */
 }
 
 @keyframes initialFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
+
+/* Estilos para el Modal de Ayuda */
+.modal-overlay {
+    display: none; /* Oculto por defecto, JS lo mostrará */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Fondo semitransparente más oscuro */
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    backdrop-filter: blur(3px); /* Sutil blur para el fondo */
+}
+
+.modal-content {
+    background-color: var(--rpg-bg); /* Un poco más oscuro que bg-alt para contraste */
+    padding: 25px 30px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--rpg-border-color);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* Sombra más pronunciada */
+    max-width: 650px; /* Un poco más ancho para la ayuda */
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    color: var(--rpg-text-color);
+}
+
+.modal-content h3 {
+    color: var(--rpg-primary-color);
+    margin-top: 0;
+    margin-bottom: 1.2rem; /* Más espacio */
+    border-bottom: 1px solid var(--rpg-border-color);
+    padding-bottom: 0.75rem; /* Más padding */
+    font-size: 1.5rem; /* Título de ayuda más grande */
+}
+
+.modal-content ul {
+    list-style: none; /* Puedes cambiar a 'disc' o 'circle' si prefieres */
+    padding-left: 0; /* O '1.2em' si usas list-style disc */
+    margin-bottom: 1rem;
+}
+
+.modal-content li {
+    margin-bottom: 0.6rem; /* Un poco más de espacio entre ítems de lista */
+    line-height: 1.6;
+}
+.modal-content li::before { /* Estilo de viñeta personalizado opcional */
+    /* content: '»';
+    color: var(--rpg-primary-color);
+    margin-right: 0.5em; */
+}
+
+
+.modal-content strong .commandable-keyword, 
+.modal-content .commandable-keyword {
+    color: var(--rpg-accent-color);
+    font-weight: 600; 
+}
+.modal-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+
+.close-button {
+    position: absolute;
+    top: 15px; /* Ajustado */
+    right: 20px; /* Ajustado */
+    background: none;
+    border: none;
+    font-size: 2.2rem; /* Ligeramente más grande */
+    font-weight: 300; /* Más fino */
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+.close-button:hover {
+    color: var(--rpg-primary-color); /* Cambia a color primario en hover */
+}
+
 
 @media (max-width: 768px) {
-    .game-title {
-        font-size: 1.5rem;
-    }
-    .game-subtitle {
-        font-size: 0.75rem;
-    }
-    .rpg-main {
-        padding-top: 1.5rem;
-        padding-bottom: 1.5rem;
-    }
-    .story-output-panel {
-        min-height: 150px;
-        max-height: 50vh;
-    }
-    .status-panel {
-        font-size: 0.8rem;
-        gap: 0.5rem 1rem;
-    }
-}
-
-.status-panel {
-    /* Asegúrate de que el status-panel pueda acomodar el inventario si se envuelve */
-    align-items: flex-start; /* Alinea los items al inicio si se envuelven */
-}
-
-.inventory-container {
-    display: flex; /* Para alinear el ícono y el título con la lista */
-    flex-direction: column; /* Título arriba, lista abajo */
-    align-items: flex-start; /* Alinea el contenido a la izquierda */
-    /* flex-basis: 100%; */ /* Descomenta si quieres que ocupe todo el ancho si el panel de estado se envuelve */
-    margin-top: 0.5rem; /* Espacio si está debajo de otros items de estado */
-    padding-top: 0.5rem; /* Espacio interno superior */
-    border-top: 1px solid var(--rpg-border-color); /* Línea separadora opcional */
-    width: 100%; /* Ocupa el ancho disponible en el flex container */
-}
-
-.inventory-title {
-    display: flex;
-    align-items: center;
-    font-weight: 600; /* Título en negrita */
-    margin-bottom: 0.35rem;
-    color: var(--rpg-text-color); /* Color de texto principal para el título */
-}
-
-.inventory-title .status-icon {
-    margin-right: 0.45rem; /* Espacio entre el ícono y el texto "Inventory:" */
-    color: var(--rpg-accent-color); /* Color del ícono */
-}
-
-.inventory-items-list {
-    width: 100%;
-    padding-left: 5px; /* Pequeña indentación para la lista de objetos */
-    max-height: 70px; /* Altura máxima antes de scroll, ajusta según necesites */
-    overflow-y: auto; /* Scroll si hay muchos objetos */
-}
-
-.inventory-empty-message {
-    font-style: italic;
-    font-size: 0.9em;
-    color: var(--color-text-muted);
-    padding: 2px 0;
-}
-
-.inventory-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.inventory-item {
-    font-size: 0.9em;
-    padding: 3px 0; /* Un poco más de padding vertical */
-    color: var(--color-text-muted);
-    white-space: nowrap; /* Evita que los nombres largos de objetos se partan en dos líneas */
-    overflow: hidden;
-    text-overflow: ellipsis; /* Añade "..." si el nombre es muy largo */
-}
-
-/* Estilo para mensajes de sistema en el story output */
-.system-message {
-    color: var(--rpg-accent-color, #3F51B5); /* O un color que prefieras para mensajes del sistema */
-    font-style: italic;
-    font-size: 0.95em; /* Ligeramente más pequeño */
-    margin-top: 0.6em !important;
-    margin-bottom: 0.6em !important;
+    .game-title { font-size: 1.5rem; }
+    .game-subtitle { font-size: 0.75rem; }
+    .rpg-main { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    .story-output-panel { min-height: 150px; max-height: 50vh; }
+    .status-panel { font-size: 0.8rem; gap: 0.5rem 1rem; }
+    .modal-content { padding: 20px; }
+    .modal-content h3 { font-size: 1.3rem; }
 }
