@@ -359,3 +359,79 @@ body.rpg-body {
     .modal-content { padding: 20px; }
     .modal-content h3 { font-size: 1.3rem; }
 }
+
+/* Added for AI-Driven RPG */
+.loading-indicator {
+    text-align: center;
+    padding: 1rem;
+    color: var(--rpg-accent-color);
+    font-style: italic;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-left-color: var(--rpg-primary-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem; /* Added margin */
+    min-height: auto; /* Adjusted from fixed height */
+}
+
+.ai-choice-button {
+    padding: 0.6rem 1.2rem;
+    background-color: var(--rpg-input-bg);
+    color: var(--rpg-text-color);
+    border: 1px solid var(--rpg-border-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition), border-color var(--transition);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.ai-choice-button:hover {
+    background-color: var(--rpg-accent-color);
+    border-color: var(--rpg-primary-color);
+    color: white;
+}
+
+/* Ensure body takes full height for sticky footer */
+body.rpg-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.rpg-main {
+    flex-grow: 1; /* Allows main content to fill space */
+}
+
+/* Ensure story output panel is scrollable */
+.story-output-panel {
+    /* max-height: 60vh; /* Or your preferred max height */
+    /* overflow-y: auto; /* Already present */
+    flex-grow: 1; /* Allow it to take available space if others shrink */
+    display: flex; /* Added to make p fill width */
+    flex-direction: column; /* Added */
+}
+.story-output-panel p.story-text-line {
+    width: 100%; /* Ensure paragraphs take full width */
+}
