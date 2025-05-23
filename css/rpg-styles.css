@@ -255,3 +255,70 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
         gap: 0.5rem 1rem;
     }
 }
+
+.status-panel {
+    /* Asegúrate de que el status-panel pueda acomodar el inventario si se envuelve */
+    align-items: flex-start; /* Alinea los items al inicio si se envuelven */
+}
+
+.inventory-container {
+    display: flex; /* Para alinear el ícono y el título con la lista */
+    flex-direction: column; /* Título arriba, lista abajo */
+    align-items: flex-start; /* Alinea el contenido a la izquierda */
+    /* flex-basis: 100%; */ /* Descomenta si quieres que ocupe todo el ancho si el panel de estado se envuelve */
+    margin-top: 0.5rem; /* Espacio si está debajo de otros items de estado */
+    padding-top: 0.5rem; /* Espacio interno superior */
+    border-top: 1px solid var(--rpg-border-color); /* Línea separadora opcional */
+    width: 100%; /* Ocupa el ancho disponible en el flex container */
+}
+
+.inventory-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600; /* Título en negrita */
+    margin-bottom: 0.35rem;
+    color: var(--rpg-text-color); /* Color de texto principal para el título */
+}
+
+.inventory-title .status-icon {
+    margin-right: 0.45rem; /* Espacio entre el ícono y el texto "Inventory:" */
+    color: var(--rpg-accent-color); /* Color del ícono */
+}
+
+.inventory-items-list {
+    width: 100%;
+    padding-left: 5px; /* Pequeña indentación para la lista de objetos */
+    max-height: 70px; /* Altura máxima antes de scroll, ajusta según necesites */
+    overflow-y: auto; /* Scroll si hay muchos objetos */
+}
+
+.inventory-empty-message {
+    font-style: italic;
+    font-size: 0.9em;
+    color: var(--color-text-muted);
+    padding: 2px 0;
+}
+
+.inventory-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.inventory-item {
+    font-size: 0.9em;
+    padding: 3px 0; /* Un poco más de padding vertical */
+    color: var(--color-text-muted);
+    white-space: nowrap; /* Evita que los nombres largos de objetos se partan en dos líneas */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Añade "..." si el nombre es muy largo */
+}
+
+/* Estilo para mensajes de sistema en el story output */
+.system-message {
+    color: var(--rpg-accent-color); /* Un color distintivo */
+    font-style: italic;
+    font-size: 0.95em;
+    margin-top: 0.5em !important;
+    margin-bottom: 0.8em !important;
+}
