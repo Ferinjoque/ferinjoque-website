@@ -16,10 +16,14 @@ let gameState = {
     inventory: [],
     sectorStability: 100,
     aiSync: 100,
-    isTyping: false, // Flag to prevent actions while text is typing
+    isTyping: false,
 };
 
-// --- Story Data (como la tenías antes, con algunas escenas de ejemplo adicionales) ---
+// --- Typing Speed ---
+const TYPING_SPEED = 15; // AJUSTA ESTA VELOCIDAD (menor es más rápido)
+const CHOICE_FADE_IN_DELAY_INCREMENT = 100; // Milisegundos entre cada opción
+
+// --- Story Data (como la tenías antes) ---
 const story = {
     intro: {
         text: [
@@ -31,9 +35,7 @@ const story = {
             { text: "Review anomaly details.", nextScene: "anomaly_details" },
             { text: "Check system status.", nextScene: "system_status" },
         ],
-        onEnter: () => {
-            updateStatusDisplay();
-        }
+        onEnter: () => updateStatusDisplay()
     },
     anomaly_details: {
         text: [
@@ -51,9 +53,7 @@ const story = {
             "GAIA Prime Core: Optimal. Sector Stability: {sectorStability}%. AI Synchronization: {aiSync}%.",
             "No other critical alerts at this time."
         ],
-        choices: [
-            { text: "Back to anomaly.", nextScene: "anomaly_details" }
-        ]
+        choices: [ { text: "Back to anomaly.", nextScene: "anomaly_details" } ]
     },
     terra_3_visual: {
         text: ["Terra-3's visual feed shows dense, rapidly pulsing flora enveloping the old unit. It's unlike anything in the database."],
@@ -89,7 +89,7 @@ const story = {
         text: ["Historical data on similar tachyon emissions is sparse. One match found: a precursor event to the 'Nova Bloom' incident, classified Level 5 biohazard."],
         choices: [{text: "Back to anomaly details.", nextScene: "anomaly_details"}]
     },
-     scan_gamma_7_area:{
+    scan_gamma_7_area:{
         text: ["The area is overgrown. Your suit's sensors pick up multiple life signs, small and fast-moving, hidden within the dense flora."],
         choices: [
             {text: "Try to get a closer look at the life signs.", nextScene: "closer_look_life_signs"},
@@ -103,7 +103,7 @@ const story = {
             {text: "Take a sample of the flora.", nextScene: "sample_flora_unit"}
         ]
     },
-     observe_gamma_7: {
+    observe_gamma_7: {
         text: ["You observe from a distance. The flora pulses in a synchronized rhythm. A faint, almost melodic sound can be heard emanating from the Terraforming Unit."],
         choices: [
             {text: "Attempt to record the sound.", nextScene: "record_sound_gamma_7"},
@@ -124,38 +124,45 @@ function processTextTemplate(text) {
                .replace(/{aiSync}/g, gameState.aiSync);
 }
 
-const TYPING_SPEED = 30; // Milliseconds per character
-
 async function typeText(element, textLines) {
     gameState.isTyping = true;
-    element.innerHTML = ''; // Clear previous text
+    element.innerHTML = '';
 
     for (const line of textLines) {
         const processedLine = processTextTemplate(line);
         const p = document.createElement('p');
         p.classList.add('story-text-line');
         element.appendChild(p);
+        let currentText = '';
         for (let i = 0; i < processedLine.length; i++) {
-            // Use innerHTML to render tags like <span class='accent'> correctly mid-typing
-            p.innerHTML = processedLine.substring(0, i + 1);
-            if (processedLine[i] === '<') { // Speed through HTML tags
+            if (processedLine[i] === '<') {
                 const tagEnd = processedLine.indexOf('>', i);
                 if (tagEnd !== -1) {
-                    p.innerHTML = processedLine.substring(0, tagEnd + 1);
-                    i = tagEnd; // Jump index to end of tag
+                    currentText += processedLine.substring(i, tagEnd + 1);
+                    i = tagEnd;
+                } else {
+                    currentText += processedLine[i];
                 }
+            } else {
+                currentText += processedLine[i];
             }
+            p.innerHTML = currentText;
             element.scrollTop = element.scrollHeight;
-            await new Promise(resolve => setTimeout(resolve, TYPING_SPEED));
+            if (processedLine[i] !== '>') { // No delay after closing a tag instantly
+                 await new Promise(resolve => setTimeout(resolve, TYPING_SPEED));
+            }
         }
-        p.innerHTML = processedLine; // Ensure full line is rendered with HTML
+        p.innerHTML = processedLine; // Ensure full line with HTML is set
         element.scrollTop = element.scrollHeight;
     }
     gameState.isTyping = false;
 }
 
-async function renderScene(sceneId, isInitialLoad = false) {
-    if (gameState.isTyping) return; // Don't change scene if text is still typing out
+async function renderScene(sceneId) {
+    if (gameState.isTyping && sceneId !== gameState.currentScene) { // Allow re-render if current scene, but not scene change
+      // console.log("Typing in progress, scene change deferred or ignored for now.");
+      return;
+    }
 
     const scene = story[sceneId] || story['default_end'];
     if (!scene) {
@@ -164,41 +171,45 @@ async function renderScene(sceneId, isInitialLoad = false) {
         choicesOutput.innerHTML = '';
         return;
     }
+    gameState.currentScene = sceneId; // Update currentScene state here
 
-    // Clear choices immediately for responsiveness
-    choicesOutput.innerHTML = '';
-    choicesOutput.classList.remove('visible'); // Hide it for fade-in later
+    choicesOutput.innerHTML = ''; // Clear old choices immediately
+    choicesOutput.classList.remove('visible'); // Prepare for new fade-in
 
-    // Handle text display
     let textToDisplay = [];
     if (scene.text) {
         textToDisplay = Array.isArray(scene.text) ? scene.text : [scene.text];
     }
     await typeText(storyOutput, textToDisplay);
 
-
     // Display choices after text has finished typing
     if (scene.choices && scene.choices.length > 0) {
-        scene.choices.forEach(choice => {
+        // choicesOutput.style.minHeight = `${scene.choices.length * 60}px`; // Approx. height to reduce jump
+        scene.choices.forEach((choice, index) => {
             const button = document.createElement('button');
             button.classList.add('choice-button');
+            // button.style.opacity = '0'; // Start invisible for individual animation
             button.textContent = processTextTemplate(choice.text);
             button.addEventListener('click', () => {
-                if (gameState.isTyping) return; // Prevent action while typing
-                gameState.currentScene = choice.nextScene;
-                renderScene(gameState.currentScene);
+                if (gameState.isTyping) return;
+                // gameState.currentScene = choice.nextScene; // This is now set at the start of renderScene
+                renderScene(choice.nextScene);
             });
             choicesOutput.appendChild(button);
+            // Apply staggered animation delay for fade-in
+             setTimeout(() => {
+                 button.classList.add('choice-visible');
+             }, index * CHOICE_FADE_IN_DELAY_INCREMENT);
         });
-        // Fade in choices
-        // Ensure choices are visible before adding class that might trigger animation
-        requestAnimationFrame(() => {
-            choicesOutput.classList.add('visible');
-        });
+        // Make the panel itself visible (if it was hidden or for structure)
+        // The individual buttons control their own appearance.
+        choicesOutput.classList.add('visible');
+
 
         if (playerInput) playerInput.style.display = 'none';
         if (submitCommandButton) submitCommandButton.style.display = 'none';
     } else {
+        // choicesOutput.style.minHeight = '0px';
         if (playerInput) playerInput.style.display = 'block';
         if (submitCommandButton) submitCommandButton.style.display = 'inline-block';
         if (playerInput && document.activeElement !== playerInput) {
@@ -211,61 +222,68 @@ async function renderScene(sceneId, isInitialLoad = false) {
     }
 }
 
-
-// displayText for player commands or system messages (appears instantly below typed story)
 function displayText(textLine, isCommandEcho = false) {
     const p = document.createElement('p');
-    p.innerHTML = processTextTemplate(textLine); // Use innerHTML for potential formatting
+    p.innerHTML = processTextTemplate(textLine);
     p.classList.add('story-text-line');
     if (isCommandEcho) {
-        p.classList.add('command-echo'); // For specific styling
+        p.classList.add('command-echo');
     }
-    storyOutput.appendChild(p); // Append directly
+    storyOutput.appendChild(p);
     storyOutput.scrollTop = storyOutput.scrollHeight;
 }
 
 async function handlePlayerCommand(command) {
-    if (gameState.isTyping) return; // Prevent command processing while story is typing
+    if (gameState.isTyping) return;
 
     const lowerCommand = command.toLowerCase().trim();
-    displayText(`> ${command}`, true); // Echo command
+    displayText(`> ${command}`, true);
 
     let sceneChangedByCommand = false;
+    let nextSceneId = gameState.currentScene; // Default to current scene
 
     if (story[gameState.currentScene] && story[gameState.currentScene].commands) {
         const commandHandler = story[gameState.currentScene].commands[lowerCommand];
         if (commandHandler) {
             if (typeof commandHandler === 'string') {
-                gameState.currentScene = commandHandler;
+                nextSceneId = commandHandler;
                 sceneChangedByCommand = true;
             } else if (typeof commandHandler === 'function') {
-                commandHandler();
+                const resultScene = commandHandler(); // Function might return next scene or modify gameState
+                if (resultScene && typeof resultScene === 'string') {
+                    nextSceneId = resultScene;
+                } else {
+                  nextSceneId = gameState.currentScene; // If function changes gameState.currentScene directly
+                }
                 sceneChangedByCommand = true;
             }
         }
     }
     
     if (!sceneChangedByCommand) {
-        let responseText;
+        let responseTextArray = [];
         if (lowerCommand === "help") {
-            responseText = "Try commands like 'look around', 'check status', or choose an option if presented.";
+            responseTextArray = ["Try commands like 'look around', 'check status', or choose an option if presented."];
         } else if (lowerCommand === "status" || lowerCommand === "check status") {
-            responseText = `Current Status: Sector Stability at ${gameState.sectorStability}%, AI Sync at ${gameState.aiSync}%.`;
+            responseTextArray = [`Current Status: Sector Stability at ${gameState.sectorStability}%, AI Sync at ${gameState.aiSync}%.`];
         } else {
-            responseText = "Command not understood in this context. Type 'help' for basic commands or choose an option.";
+            responseTextArray = ["Command not understood in this context. Type 'help' for basic commands or choose an option."];
         }
-        // Type out the game's response to the command
-        await typeText(storyOutput, [...story[gameState.currentScene].text, responseText]); // Retype current scene + response
+        // Append the game's response to the current scene's text and re-type
+        // This requires story[gameState.currentScene].text to be an array.
+        const currentSceneText = Array.isArray(story[gameState.currentScene].text) ? story[gameState.currentScene].text : [story[gameState.currentScene].text];
+        await typeText(storyOutput, [...currentSceneText, ...responseTextArray]);
     } else {
-      await renderScene(gameState.currentScene); // If command led to scene change
+      await renderScene(nextSceneId);
     }
-     // Ensure input field is ready again if applicable
-    if (!story[gameState.currentScene]?.choices?.length > 0 && playerInput) {
+    
+    if (!story[nextSceneId]?.choices?.length > 0 && playerInput) {
         playerInput.style.display = 'block';
-        submitCommandButton.style.display = 'inline-block';
+        if (submitCommandButton) submitCommandButton.style.display = 'inline-block';
         setTimeout(() => playerInput.focus(), 0);
     }
 }
+
 
 function updateStatusDisplay() {
     if (playerNameDisplay) playerNameDisplay.textContent = gameState.playerName;
@@ -307,23 +325,27 @@ if (themeToggle) {
 
 // --- Initial Game Setup ---
 async function initializeGame() {
-    // Apply an initial fade-in to the main game container elements for a nice entry
-    storyOutput.classList.add('initial-load-fade');
-    choicesOutput.classList.add('initial-load-fade');
-    if (playerInput) playerInput.parentElement.classList.add('initial-load-fade'); // Input panel
-    document.getElementById('status-panel').classList.add('initial-load-fade');
+    const elementsToFade = [
+        storyOutput,
+        choicesOutput,
+        document.getElementById('status-panel')
+    ];
+    if (playerInput && playerInput.parentElement) {
+        elementsToFade.push(playerInput.parentElement);
+    }
 
-
+    elementsToFade.forEach(el => {
+        if(el) el.classList.add('initial-load-fade');
+    });
+    
     updateStatusDisplay();
-    await renderScene(gameState.currentScene, true); // Pass true for isInitialLoad
+    await renderScene(gameState.currentScene);
 
-    // Remove initial load fade classes after animation completes
     setTimeout(() => {
-        storyOutput.classList.remove('initial-load-fade');
-        choicesOutput.classList.remove('initial-load-fade');
-        if (playerInput) playerInput.parentElement.classList.remove('initial-load-fade');
-        document.getElementById('status-panel').classList.remove('initial-load-fade');
-    }, 600); // Should match or exceed the initial-load-fade animation duration
+        elementsToFade.forEach(el => {
+            if(el) el.classList.remove('initial-load-fade');
+        });
+    }, 600);
 }
 
 // Start the game
