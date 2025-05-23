@@ -189,15 +189,16 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 }
 
 /* Text animation for story output */
-.story-text-line {
-    opacity: 0;
-    animation: fadeInLine 0.5s forwards;
+.story-output-panel, .choices-panel {
+    transition: opacity 0.25s ease-in-out; /* Smooth opacity transition */
 }
 
-@keyframes fadeInLine {
-    to {
-        opacity: 1;
-    }
+.fade-out-active {
+    opacity: 0 !important; /* Force opacity to 0 for fade-out */
+}
+
+.fade-in-active {
+    opacity: 1 !important; /* Force opacity to 1 for fade-in */
 }
 
 /* Responsive adjustments */
