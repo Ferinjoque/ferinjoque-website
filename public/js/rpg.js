@@ -28,7 +28,7 @@ let gameState = {
 
 // --- Configuration ---
 const TYPING_SPEED = 5; // Faster for AI output
-const SUPABASE_FUNCTION_URL = `/functions/v1/rpg-ai-engine`; // Relative path for Supabase Edge Function
+const SUPABASE_FUNCTION_URL = `https://sueybbrfwiqviollreiu.supabase.co/functions/v1/rpg-ai-engine/`; // Relative path for Supabase Edge Function
 
 // --- Core Functions ---
 
