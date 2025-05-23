@@ -18,13 +18,13 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 }
 
 .rpg-header {
-    position: sticky; /* Or fixed, depending on preference */
+    position: sticky;
     top: 0;
     left: 0;
     width: 100%;
-    padding: 1rem 0; /* Slightly less padding than main header */
+    padding: 1rem 0;
     z-index: 100;
-    background-color: var(--color-bg); /* Match main header */
+    background-color: var(--color-bg);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
@@ -35,7 +35,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 }
 
 .rpg-header .logo a {
-    padding: 0.25rem 0.5rem; /* Adjust padding if needed */
+    padding: 0.25rem 0.5rem;
 }
 
 .game-title-container {
@@ -44,7 +44,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 }
 
 .game-title {
-    font-size: 1.75rem; /* Adjust as needed */
+    font-size: 1.75rem;
     color: var(--rpg-primary-color);
     margin-bottom: 0;
     font-weight: 700;
@@ -63,7 +63,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-width: 900px; /* Control max width for readability */
+    max-width: 900px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -74,44 +74,40 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     border: 1px solid var(--rpg-border-color);
     padding: 1.5rem;
     border-radius: var(--border-radius);
-    min-height: 200px; /* Adjust as needed */
-    max-height: 60vh; /* Aumentado un poco para más texto */
+    min-height: 200px; 
+    max-height: 60vh;
     overflow-y: auto;
     color: var(--rpg-text-color);
     box-shadow: var(--shadow);
-    /* transition: none; */ /* Eliminamos la transición de opacidad global aquí */
 }
 
-/* Estilo para las líneas de texto de la historia */
-.story-output-panel p.story-text-line { /* Aumentamos especificidad */
+.story-output-panel p.story-text-line {
     margin-bottom: 0.8em !important;
     line-height: 1.6;
 }
 
-.story-output-panel p.story-text-line:last-child { /* Aumentamos especificidad */
+/* Corregido: Aplicar a story-output-panel y p, y :last-child */
+.story-output-panel p.story-text-line:last-child {
     margin-bottom: 0 !important;
 }
 
-/* Estilo para el eco de los comandos del jugador */
 .command-echo {
     color: var(--color-text-muted, #aaaaaa);
     font-style: italic;
     margin-top: 0.5em;
-    margin-bottom: 1em !important; /* Más espacio después del eco */
+    margin-bottom: 1em !important;
 }
 
-/* Panel de opciones (botones) - con fade-in */
+/* Panel de opciones (botones) */
 .choices-panel {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    opacity: 0; /* Inicia invisible */
-    transition: opacity 0.3s ease-in-out;
-    margin-top: 1rem; /* Espacio entre el texto de la historia y las opciones */
-}
-
-.choices-panel.visible {
-    opacity: 1; /* Hacer visible con JS para activar la transición */
+    gap: 0.5rem; /* Reducido el gap, ya que los botones tendrán margen */
+    margin-top: 1.5rem; /* Un poco más de espacio sobre las opciones */
+    /* min-height: 50px; */ /* Una altura mínima para ayudar a prevenir saltos. Ajusta al tamaño de tus botones. */
+                          /* Por ejemplo, si un botón con padding es ~40-50px, y esperas al menos 1 opción. */
+                          /* Si no hay opciones, JS debería ocultar este panel o no darle altura. */
+    /* La opacidad y transición del panel general se eliminan para controlar botones individualmente */
 }
 
 .choice-button {
@@ -124,19 +120,32 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     border-radius: var(--border-radius, 4px);
     text-align: left;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; /* Transiciones más rápidas para botones */
     font-family: var(--font-sans);
-    margin-bottom: 0.5rem; /* Espacio entre botones de opción */
+    margin-bottom: 0.6rem; /* Espacio entre botones de opción */
+    
+    /* Estilos iniciales para la animación de entrada escalonada */
+    opacity: 0;
+    transform: translateY(15px); /* Inicia un poco más abajo */
+    /* La animación se define, pero el delay lo aplica JS para el efecto escalonado */
+    /* O usamos una clase que JS añade con delay */
+    transition: opacity 0.35s ease-out, transform 0.35s ease-out; /* Usaremos transición en lugar de @keyframes para más simplicidad con JS */
 }
 
 .choice-button:last-child {
     margin-bottom: 0;
 }
 
+/* Clase que JS añadirá a cada botón con un retraso para activar la transición */
+.choice-button.choice-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .choice-button:hover {
     background-color: var(--rpg-primary-color, #4CAF50);
     border-color: var(--rpg-primary-color, #4CAF50);
     color: white;
+    /* La transición base del botón ya maneja el hover suavemente */
 }
 
 .input-panel {
@@ -151,7 +160,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     border: 1px solid var(--rpg-border-color);
     border-radius: var(--border-radius);
     color: var(--rpg-text-color);
-    font-family: var(--font-mono, monospace); /* Monospaced for command input */
+    font-family: var(--font-mono, monospace);
     transition: border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -163,13 +172,13 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 
 .rpg-submit-button {
     flex-shrink: 0;
-    padding: 0.75rem 1.5rem; /* Match main CTA button */
+    padding: 0.75rem 1.5rem;
 }
 
 .status-panel {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem 2rem; /* Row and column gap */
+    gap: 1rem 2rem;
     padding: 1rem;
     background-color: var(--rpg-panel-bg);
     border: 1px solid var(--rpg-border-color);
@@ -192,7 +201,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 
 .rpg-footer {
     background-color: var(--color-bg-alt);
-    padding: 2rem 0 1.5rem; /* Reduced padding */
+    padding: 2rem 0 1.5rem;
     text-align: center;
     font-size: 0.875rem;
     border-top: 1px solid rgba(255,255,255,0.05);
@@ -209,18 +218,16 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     color: var(--color-primary);
 }
 
-/* Efecto de fade-in para la carga inicial de la interfaz */
-/* Aplicar a .story-output-panel, .choices-panel, .input-panel, .status-panel */
 .initial-load-fade {
     opacity: 0;
     animation: initialFadeIn 0.5s ease-out forwards;
-    /* animation-delay: 0.1s; /* JS controlará el inicio para asegurar que el contenido esté listo */
+    /* El delay se puede ajustar en JS si es necesario, o dejarlo en 0.1s como antes */
 }
 
 @keyframes initialFadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px); /* Sutil movimiento hacia arriba */
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -228,7 +235,6 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     }
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .game-title {
         font-size: 1.5rem;
@@ -242,7 +248,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     }
     .story-output-panel {
         min-height: 150px;
-        max-height: 50vh; /* Ajustar para pantallas más pequeñas si es necesario */
+        max-height: 50vh;
     }
     .status-panel {
         font-size: 0.8rem;
