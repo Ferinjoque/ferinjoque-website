@@ -104,10 +104,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     flex-direction: column;
     gap: 0.5rem; /* Reducido el gap, ya que los botones tendrán margen */
     margin-top: 1.5rem; /* Un poco más de espacio sobre las opciones */
-    /* min-height: 50px; */ /* Una altura mínima para ayudar a prevenir saltos. Ajusta al tamaño de tus botones. */
-                          /* Por ejemplo, si un botón con padding es ~40-50px, y esperas al menos 1 opción. */
-                          /* Si no hay opciones, JS debería ocultar este panel o no darle altura. */
-    /* La opacidad y transición del panel general se eliminan para controlar botones individualmente */
+    min-height: 30px;
 }
 
 .choice-button {
@@ -316,9 +313,9 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
 
 /* Estilo para mensajes de sistema en el story output */
 .system-message {
-    color: var(--rpg-accent-color); /* Un color distintivo */
+    color: var(--rpg-accent-color, #3F51B5); /* O un color que prefieras para mensajes del sistema */
     font-style: italic;
-    font-size: 0.95em;
-    margin-top: 0.5em !important;
-    margin-bottom: 0.8em !important;
+    font-size: 0.95em; /* Ligeramente más pequeño */
+    margin-top: 0.6em !important;
+    margin-bottom: 0.6em !important;
 }
