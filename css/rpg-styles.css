@@ -56,7 +56,6 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     letter-spacing: 0.5px;
 }
 
-
 .rpg-main {
     flex-grow: 1;
     padding-top: 2rem;
@@ -76,45 +75,67 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     padding: 1.5rem;
     border-radius: var(--border-radius);
     min-height: 200px; /* Adjust as needed */
-    max-height: 50vh;
+    max-height: 60vh; /* Aumentado un poco para más texto */
     overflow-y: auto;
     color: var(--rpg-text-color);
     box-shadow: var(--shadow);
+    /* transition: none; */ /* Eliminamos la transición de opacidad global aquí */
 }
 
-.story-output-panel p {
-    margin-bottom: 1rem;
-    line-height: 1.7; /* More spacing for readability */
+/* Estilo para las líneas de texto de la historia */
+.story-output-panel p.story-text-line { /* Aumentamos especificidad */
+    margin-bottom: 0.8em !important;
+    line-height: 1.6;
 }
 
-.story-output-panel p:last-child {
-    margin-bottom: 0;
+.story-output-panel p.story-text-line:last-child { /* Aumentamos especificidad */
+    margin-bottom: 0 !important;
 }
 
-/* Style for choices */
+/* Estilo para el eco de los comandos del jugador */
+.command-echo {
+    color: var(--color-text-muted, #aaaaaa);
+    font-style: italic;
+    margin-top: 0.5em;
+    margin-bottom: 1em !important; /* Más espacio después del eco */
+}
+
+/* Panel de opciones (botones) - con fade-in */
 .choices-panel {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    opacity: 0; /* Inicia invisible */
+    transition: opacity 0.3s ease-in-out;
+    margin-top: 1rem; /* Espacio entre el texto de la historia y las opciones */
+}
+
+.choices-panel.visible {
+    opacity: 1; /* Hacer visible con JS para activar la transición */
 }
 
 .choice-button {
     display: block;
     width: 100%;
-    padding: 0.75rem 1.25rem;
-    background-color: var(--rpg-input-bg);
-    color: var(--rpg-text-color);
-    border: 1px solid var(--rpg-border-color);
-    border-radius: var(--border-radius);
+    padding: 0.85rem 1.25rem;
+    background-color: var(--rpg-input-bg, rgba(0, 0, 0, 0.2));
+    color: var(--rpg-text-color, #eaeaea);
+    border: 1px solid var(--rpg-border-color, rgba(255, 255, 255, 0.1));
+    border-radius: var(--border-radius, 4px);
     text-align: left;
     cursor: pointer;
-    transition: background-color var(--transition), border-color var(--transition);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; /* Transiciones más rápidas para botones */
     font-family: var(--font-sans);
+    margin-bottom: 0.5rem; /* Espacio entre botones de opción */
+}
+
+.choice-button:last-child {
+    margin-bottom: 0;
 }
 
 .choice-button:hover {
-    background-color: var(--rpg-primary-color);
-    border-color: var(--rpg-primary-color);
+    background-color: var(--rpg-primary-color, #4CAF50);
+    border-color: var(--rpg-primary-color, #4CAF50);
     color: white;
 }
 
@@ -188,17 +209,23 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     color: var(--color-primary);
 }
 
-/* Text animation for story output */
-.story-output-panel, .choices-panel {
-    transition: opacity 0.25s ease-in-out; /* Smooth opacity transition */
+/* Efecto de fade-in para la carga inicial de la interfaz */
+/* Aplicar a .story-output-panel, .choices-panel, .input-panel, .status-panel */
+.initial-load-fade {
+    opacity: 0;
+    animation: initialFadeIn 0.5s ease-out forwards;
+    /* animation-delay: 0.1s; /* JS controlará el inicio para asegurar que el contenido esté listo */
 }
 
-.fade-out-active {
-    opacity: 0 !important; /* Force opacity to 0 for fade-out */
-}
-
-.fade-in-active {
-    opacity: 1 !important; /* Force opacity to 1 for fade-in */
+@keyframes initialFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px); /* Sutil movimiento hacia arriba */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive adjustments */
@@ -215,6 +242,7 @@ body.rpg-body { /* You can add this class to body in rpg.html if needed for very
     }
     .story-output-panel {
         min-height: 150px;
+        max-height: 50vh; /* Ajustar para pantallas más pequeñas si es necesario */
     }
     .status-panel {
         font-size: 0.8rem;
