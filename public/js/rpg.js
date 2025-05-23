@@ -15,7 +15,7 @@ const closeHelpButton = document.getElementById('close-help-modal');
 // --- Game State ---
 let gameState = {
     playerName: "Warden",
-    currentScene: "intro", // Ensure this is a valid starting scene ID
+    currentScene: "intro",
     inventory: [],
     sectorStability: 100,
     aiSync: 100,
@@ -24,9 +24,9 @@ let gameState = {
 };
 
 // --- Typing Speed ---
-const TYPING_SPEED = 15;
+const TYPING_SPEED = 10; // Made typing even faster
 
-// --- Keywords & Story Data (Using your provided structure) ---
+// --- Keywords & Story Data (Copied from your last complete JS version) ---
 const COMMON_KEYWORDS = [
     "look", "examine", "use", "take", "go", "inventory", "help", "status", "search",
     "mirar", "examinar", "usar", "coger", "ir", "inventario", "ayuda", "estado", "buscar",
@@ -34,7 +34,7 @@ const COMMON_KEYWORDS = [
     "data stream", "report", "terra-3", "terraforming unit 7", "geothermal tap", "bio-signatures",
     "review anomaly", "system status", "query", "analyze", "access", "proceed", "remove",
     "investigate", "focus", "north", "south", "east", "west", "up", "down",
-    "diag_keycard", "return", "back" // Added return/back
+    "diag_keycard", "return", "back"
 ];
 
 const story = {
@@ -52,7 +52,7 @@ const story = {
             "console": "The main interface console. Gleaming and cool to the touch. The <span class='commandable-keyword'>alert</span> for Gamma-7 pulses on screen. You could try to <span class='commandable-keyword'>search console</span>.",
             "alert": "A flashing red alert indicating unusual readings from Sector Gamma-7. Perhaps you should <span class='commandable-keyword'>review anomaly</span>.",
             "interface": "A holographic interface displaying system diagnostics and communication channels.",
-            "system status": { type: "description", text: "Shows the current system status. Type '<span class='commandable-keyword'>system status</span>' to view."}, // Para que "examine system status" funcione
+            "system status": { type: "description", text: "Shows the current system status. Type '<span class='commandable-keyword'>system status</span>' to view."},
             "review anomaly": { type: "description", text: "Displays details about the anomaly. Type '<span class='commandable-keyword'>review anomaly</span>' to view."}
         },
         sceneActions: { 
@@ -61,7 +61,6 @@ const story = {
             "search console": "search_console"
         },
         onEnter: () => {
-            // updateStatusDisplay(); // Called at the end of renderScene
             gameState.firstLookInScene = true; 
         }
     },
@@ -132,37 +131,53 @@ const story = {
         },
         onEnter: () => { gameState.firstLookInScene = true; }
     },
-    system_status: { /* ... (your existing system_status) ... */ },
-    terra_3_visual: { /* ... (your existing terra_3_visual) ... */ },
-    flora_scan: { /* ... (your existing flora_scan) ... */ },
-    geothermal_investigation: { // Placeholder
-        onEnterText: ["You head towards the geothermal tap readings. The heat intensifies."],
-        description: ["The passage narrows. Strange markings glow faintly on the walls."],
+    system_status: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], interactables: { /* ... */ }, 
+        sceneActions: {"back": "intro", "return": "intro"},
+        onEnter: () => { gameState.firstLookInScene = true; }
+    },
+    terra_3_visual: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], interactables: { /* ... */ }, 
+        sceneActions: { "scan flora": "flora_scan", "back": "anomaly_details"},
+        onEnter: () => { gameState.firstLookInScene = true; }
+    },
+    flora_scan: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], interactables: { /* ... */ }, 
+        sceneActions: {"back": "terra_3_visual"},
+        onEnter: () => { gameState.firstLookInScene = true; }
+    },
+    geothermal_investigation: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], 
         sceneActions: {"back": "advanced_diagnostics"},
         onEnter: () => gameState.firstLookInScene = true
     },
-    biosignature_focus: { // Placeholder
-        onEnterText: ["Focusing on the bio-signatures reveals a complex, hive-like consciousness emerging."],
-        description: ["The bio-network seems aware of your observation."],
+    biosignature_focus: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], 
         sceneActions: {"back": "advanced_diagnostics"},
         onEnter: () => gameState.firstLookInScene = true
     },
-    gamma_7_arrival: { /* ... (your existing gamma_7_arrival, ensure it uses sceneActions) ... */ },
-    default_end: { /* ... (your existing default_end) ... */ }
+    gamma_7_arrival: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], interactables: { /* ... */ }, 
+        sceneActions: { /* ... Define actions for this scene ... */ "back": "anomaly_details"},
+        onEnter: () => gameState.firstLookInScene = true
+    },
+    default_end: { 
+        onEnterText: [ /* ... */ ], description: [ /* ... */ ], 
+        sceneActions: {"restart": "intro"},
+        onEnter: () => { gameState.firstLookInScene = true; }
+    }
 };
 
 // --- Inventory Functions ---
 function addItemToInventory(itemId, itemName) {
     if (!playerHasItem(itemId)) {
         gameState.inventory.push({ id: itemId, name: itemName });
-        // updateInventoryDisplay is called by updateStatusDisplay
         displayText(`System: ${itemName} added to inventory.`, false, 'system-message', true);
     }
 }
 function playerHasItem(itemId) { return gameState.inventory.some(item => item.id === itemId); }
-
 function updateInventoryDisplay() {
-    if (!inventoryDisplay) { console.warn("Inventory display element not found."); return; }
+    if (!inventoryDisplay) return;
     inventoryDisplay.innerHTML = '';
     if (gameState.inventory.length === 0) {
         const p = document.createElement('p'); p.textContent = 'Empty'; p.classList.add('inventory-empty-message'); inventoryDisplay.appendChild(p);
@@ -177,7 +192,7 @@ function updateInventoryDisplay() {
 
 // --- Game Logic Functions ---
 function processTextTemplate(text) {
-    if (typeof text !== 'string') text = String(text); // Ensure text is a string
+    if (typeof text !== 'string') text = String(text);
     return text.replace(/{playerName}/g, gameState.playerName)
                .replace(/{sectorStability}/g, gameState.sectorStability)
                .replace(/{aiSync}/g, gameState.aiSync);
@@ -201,11 +216,27 @@ function highlightKeywords(line, sceneDef) {
     return highlightedLine;
 }
 
+// Function to scroll the storyOutput to the top
+function scrollToStoryOutputTop() {
+    if (storyOutput) {
+        storyOutput.scrollTop = 0;
+    }
+}
+// Function to scroll to the latest message (bottom)
+function scrollToStoryOutputBottom() {
+    if (storyOutput) {
+        storyOutput.scrollTop = storyOutput.scrollHeight;
+    }
+}
+
+
 async function typeText(element, textLines, sceneDef) {
     gameState.isTyping = true;
     console.log("typeText started, isTyping:", gameState.isTyping);
     try {
-        element.innerHTML = '';
+        element.innerHTML = ''; // Clear previous content
+        scrollToStoryOutputTop(); // Scroll to top before new text starts typing
+
         for (const line of textLines) {
             let processedLine = typeof line === 'function' ? line() : line;
             processedLine = processTextTemplate(processedLine);
@@ -223,20 +254,21 @@ async function typeText(element, textLines, sceneDef) {
                     } else { currentText += highlightedLine[i]; }
                 } else { currentText += highlightedLine[i]; }
                 p.innerHTML = currentText;
-                element.scrollTop = element.scrollHeight;
+                scrollToStoryOutputBottom(); // Scroll with each character
                 if (TYPING_SPEED > 0 && (highlightedLine[i] !== '>' || (i > 0 && highlightedLine[i-1] ==='<'))) {
                      await new Promise(resolve => setTimeout(resolve, TYPING_SPEED));
                 }
             }
-            p.innerHTML = highlightedLine; // Ensure full line is rendered
-            element.scrollTop = element.scrollHeight;
+            p.innerHTML = highlightedLine;
+            scrollToStoryOutputBottom(); // Ensure fully scrolled after line
         }
     } catch (error) {
         console.error("Error during typeText:", error);
         element.innerHTML += '<p class="story-text-line system-message">Error typing text.</p>';
     } finally {
-        gameState.isTyping = false; // CRITICAL: Always reset this flag
+        gameState.isTyping = false;
         console.log("typeText finished, isTyping:", gameState.isTyping);
+        scrollToStoryOutputBottom(); // Final scroll after all typing done for the scene
     }
 }
 
@@ -260,12 +292,6 @@ async function renderScene(sceneId) {
             gameState.firstLookInScene = true;
         }
 
-        // No longer generating choices buttons here
-        // const choicesOutput = document.getElementById('choices-output'); // Already defined globally
-        // if (choicesOutput) choicesOutput.innerHTML = ''; 
-        // if (choicesOutput) choicesOutput.classList.remove('visible');
-
-
         let textToDisplay = [];
         if (gameState.firstLookInScene && scene.onEnterText) {
             textToDisplay = Array.isArray(scene.onEnterText) ? scene.onEnterText : [scene.onEnterText].map(line => typeof line === 'function' ? line() : line);
@@ -274,7 +300,7 @@ async function renderScene(sceneId) {
         } else { textToDisplay = ["You observe your surroundings. What do you do?"]; }
         
         await typeText(storyOutput, textToDisplay, scene);
-        gameState.firstLookInScene = false;
+        gameState.firstLookInScene = false; // Set after typing
 
         if (playerInput) playerInput.style.display = 'block';
         if (submitCommandButton) submitCommandButton.style.display = 'inline-block';
@@ -283,7 +309,7 @@ async function renderScene(sceneId) {
             console.log(`Executing onEnter for scene: ${sceneId}`);
             scene.onEnter();
         }
-        updateStatusDisplay(); // Update all status displays, including inventory
+        updateStatusDisplay();
     } catch (error) {
         console.error("Error in renderScene:", error);
         storyOutput.innerHTML = '<p class="story-text-line system-message">Error rendering scene. Please try again or refresh.</p>';
@@ -295,7 +321,6 @@ function displayText(textLine, isCommandEcho = false, type = 'normal', immediate
     console.log(`displayText: "${textLine}", immediate: ${immediate}, type: ${type}`);
     const p = document.createElement('p');
     const templatedLine = processTextTemplate(textLine);
-    // Apply highlighting only if it's a normal game message, not an echo or system message
     p.innerHTML = (!isCommandEcho && type === 'normal') ? highlightKeywords(templatedLine, story[gameState.currentScene]) : templatedLine;
     
     p.classList.add('story-text-line');
@@ -303,12 +328,11 @@ function displayText(textLine, isCommandEcho = false, type = 'normal', immediate
     if (type === 'system-message') p.classList.add('system-message');
     
     storyOutput.appendChild(p);
-    storyOutput.scrollTop = storyOutput.scrollHeight;
+    scrollToStoryOutputBottom(); // Scroll to new message
 }
 
 async function handlePlayerCommand(command) {
     console.log(`handlePlayerCommand: "${command}", isTyping before call: ${gameState.isTyping}`);
-    // The isTyping check should be done by the event listener before calling this
     try {
         const lowerCommand = command.toLowerCase().trim();
         displayText(`> ${command}`, true); // Echo command
@@ -318,43 +342,34 @@ async function handlePlayerCommand(command) {
         const parts = lowerCommand.split(/\s+/);
         const verb = parts[0];
         let target = parts.slice(1).join(" ").trim();
-        let nextSceneToRender = gameState.currentScene; // Default to re-rendering current scene if no explicit change
+        let nextSceneToRender = null; // Changed from gameState.currentScene
 
-        // 1. Scene-specific actions (sceneActions)
         if (currentSceneDef.sceneActions && currentSceneDef.sceneActions[lowerCommand]) {
             const actionResult = currentSceneDef.sceneActions[lowerCommand];
-            let sceneToTransitionTo = null;
-
             if (typeof actionResult === 'string') {
-                sceneToTransitionTo = actionResult;
+                nextSceneToRender = actionResult;
             } else if (typeof actionResult === 'function') {
-                const funcResult = actionResult(); // Execute function
-                if (typeof funcResult === 'string') sceneToTransitionTo = funcResult; // Function might return next scene ID
-            } else if (typeof actionResult === 'object' && actionResult.nextScene) { // For {nextScene: "...", onAction: func}
+                const funcResult = actionResult();
+                if (typeof funcResult === 'string') nextSceneToRender = funcResult;
+                // If funcResult is not a string, assume it handled display or state changes itself
+                // and we might re-render current scene or rely on its internal logic.
+            } else if (typeof actionResult === 'object' && actionResult.nextScene) {
                 if(actionResult.onAction && typeof actionResult.onAction === 'function') actionResult.onAction();
-                sceneToTransitionTo = actionResult.nextScene;
-            }
-            
-            if(sceneToTransitionTo) {
-                await renderScene(sceneToTransitionTo);
-            } else { // If action didn't specify a new scene, re-render current to show effects or messages
-                await renderScene(gameState.currentScene);
+                nextSceneToRender = actionResult.nextScene;
             }
             commandHandled = true;
-        }
-        // 2. Global verb processing
-        else {
+        } else {
             switch (verb) {
                 case "look": case "mirar":
                     target = parts.length > 1 ? target : "around";
                     if (target === "around" || target === "") {
                         gameState.firstLookInScene = false; 
-                        await renderScene(gameState.currentScene);
-                    } else { 
+                        nextSceneToRender = gameState.currentScene; // Set to re-render
+                    } else {
                         if (currentSceneDef.interactables && currentSceneDef.interactables[target]) {
                             const interactable = currentSceneDef.interactables[target];
                             const desc = typeof interactable === 'string' ? interactable : interactable.description || interactable.text || "It's a " + target + ".";
-                            displayText(desc, false, 'system-message', true); // System message for examine results
+                            displayText(desc, false, 'system-message', true);
                         } else {
                             displayText(`You don't see a "${target}" to look at closely.`, false, 'system-message', true);
                         }
@@ -366,7 +381,7 @@ async function handlePlayerCommand(command) {
                     else if (currentSceneDef.interactables && currentSceneDef.interactables[target]) {
                         const interactable = currentSceneDef.interactables[target];
                         const desc = typeof interactable === 'string' ? interactable : interactable.description || interactable.text || "It's a " + target + ".";
-                        displayText(desc, false, 'system-message', true); // System message for examine results
+                        displayText(desc, false, 'system-message', true);
                     } else {
                         displayText(`You find nothing special about the <span class="commandable-keyword">${target}</span>.`, false, 'system-message', true);
                     }
@@ -383,32 +398,39 @@ async function handlePlayerCommand(command) {
                     commandHandled = true;
                     break;
                 case "use": 
-                    // Basic use logic - can be expanded significantly
                     const itemToUseName = target.split(" on ")[0].trim();
                     const useTargetObject = target.includes(" on ") ? target.split(" on ")[1].trim() : null;
                     const itemInInventory = gameState.inventory.find(item => item.name.toLowerCase().includes(itemToUseName.toLowerCase()));
 
                     if (itemInInventory) {
                         displayText(`You attempt to use the ${itemInInventory.name}...`, false, 'system-message', true);
-                        // Add logic here for item uses defined in story[gameState.currentScene].itemUses
-                        // For now, just a placeholder
                         displayText(`(Define what happens when ${itemInInventory.name} is used${useTargetObject ? ' on ' + useTargetObject : ''})`, false, 'system-message', true);
-
                     } else {
                         displayText("You don't have that item.", false, 'system-message', true);
                     }
                     commandHandled = true;
                     break;
                 case "help": case "?": case "ayuda":
-                    showHelpModal();
+                    showHelpModal(); // This was the issue, it should be here.
                     commandHandled = true;
                     break;
             }
         }
         
-        if (!commandHandled) {
-            displayText("I didn't understand that. Type `<span class=\"commandable-keyword\">help</span>` for common commands.", false, 'system-message', true);
+        if (nextSceneToRender) { // If any action decided on a scene transition
+            await renderScene(nextSceneToRender);
+        } else if (commandHandled && !nextSceneToRender) {
+            // If a command was handled but didn't change the scene (e.g. examine, inventory)
+            // we might not need to re-render the whole scene, just ensure input is focused.
+            // If it was an invalid command not caught by sceneActions or global verbs:
+            if (!commandHandled) { // This condition is now redundant due to the outer `else`
+                 displayText("I didn't understand that. Type `<span class=\"commandable-keyword\">help</span>` for common commands.", false, 'system-message', true);
+            }
+        } else if (!commandHandled) { // Default for unhandled input
+             displayText("I didn't understand that. Type `<span class=\"commandable-keyword\">help</span>` for common commands.", false, 'system-message', true);
         }
+
+
     } catch (error) {
         console.error("Error in handlePlayerCommand:", error);
         displayText("An error occurred processing your command.", false, 'system-message', true);
@@ -421,8 +443,29 @@ async function handlePlayerCommand(command) {
 }
 
 // --- Funciones para el Modal de Ayuda ---
-function showHelpModal() { /* ... (como antes) ... */ }
-function closeHelpModalFunc() { /* ... (como antes) ... */ }
+function showHelpModal() {
+    if (!helpModal || !helpContent) { console.error("Help modal elements not found!"); return; }
+    console.log("Showing help modal...");
+    const commonVerbsText = COMMON_KEYWORDS.filter(k => COMMON_VERBS.includes(k)).map(v => `<span class="commandable-keyword">${v}</span>`).join(", ");
+    
+    helpContent.innerHTML = `
+        <h3>Common Commands</h3>
+        <p>Interact by typing commands. Some common verbs are:</p>
+        <ul>
+            <li><strong><span class="commandable-keyword">look</span></strong> or <strong><span class="commandable-keyword">look around</span></strong>: Describes your current surroundings.</li>
+            <li><strong><span class="commandable-keyword">examine</span> [thing/person]</strong>: Get more details (e.g., '<span class="commandable-keyword">examine console</span>').</li>
+            <li><strong><span class="commandable-keyword">inventory</span></strong> or <strong><span class="commandable-keyword">i</span></strong>: Check your items.</li>
+            <li><strong><span class="commandable-keyword">use</span> [item] on [target]</strong>: Use an item from your inventory on something.</li>
+            <li><strong><span class="commandable-keyword">take</span> [item]</strong>: Pick up an item (if available).</li>
+            <li><strong><span class="commandable-keyword">go</span> [direction/place]</strong>: Move to a new location (e.g., '<span class="commandable-keyword">go north</span>', not yet implemented).</li>
+            <li><strong><span class="commandable-keyword">status</span></strong>: Check game status like Sector Stability.</li>
+        </ul>
+        <p>Keywords in the story text are often highlighted in <span class="commandable-keyword">this color</span> and can be used in your commands (e.g., as targets for 'examine', or as direct actions).</p>
+        <p>Other potentially useful verbs: ${commonVerbsText}. Context is key!</p>
+    `;
+    helpModal.style.display = 'flex';
+}
+function closeHelpModalFunc() { if (helpModal) helpModal.style.display = 'none'; console.log("Help modal closed."); }
 
 // --- updateStatusDisplay e initializeGame ---
 function updateStatusDisplay() {
@@ -435,7 +478,7 @@ function updateStatusDisplay() {
 
 async function initializeGame() {
     console.log("Initializing game...");
-    const statusPanel = document.getElementById('status-panel'); // Define statusPanel here
+    const statusPanel = document.getElementById('status-panel');
 
     if (!storyOutput || !playerInput || !submitCommandButton || !statusPanel || !inventoryDisplay || !helpModal || !helpContent || !closeHelpButton) {
         console.error("One or more critical UI elements are missing. Aborting game initialization.");
@@ -453,18 +496,23 @@ async function initializeGame() {
     
     const currentSceneData = story[gameState.currentScene];
     const initialTextArray = currentSceneData?.onEnterText || currentSceneData?.description || [""];
-    const initialTextLength = Array.isArray(initialTextArray) ? initialTextArray.flat().join("").length : String(initialTextArray).length;
+    // Ensure initialTextArray is always an array before flat() and join()
+    const flatInitialText = Array.isArray(initialTextArray) ? initialTextArray.flat().join("") : String(initialTextArray).length;
+    const initialTextLength = flatInitialText.length;
 
+
+    // Make the "Type 'look around'..." message appear faster
+    const guidanceMessageDelay = 250; // Shorter, fixed delay after initial scene text might be better
     setTimeout(() => { 
-        if (!gameState.isTyping) {
+        if (!gameState.isTyping) { // Check if still typing from initial scene
              displayText("Type `<span class=\"commandable-keyword\">look around</span>` to observe, or `<span class=\"commandable-keyword\">help</span>` for commands.", false, "system-message", true);
         }
-        if (playerInput) playerInput.focus();
-    }, initialTextLength * TYPING_SPEED + 900);
+        if (playerInput) playerInput.focus(); // Focus after initial messages
+    }, initialTextLength * TYPING_SPEED + guidanceMessageDelay); // Tie to typing speed + fixed delay
 
     setTimeout(() => {
         elementsToFade.forEach(el => { if(el) el.classList.remove('initial-load-fade'); });
-    }, 600);
+    }, 600); 
     console.log("Game initialized.");
 }
 
@@ -472,13 +520,16 @@ async function initializeGame() {
 if (submitCommandButton) {
     submitCommandButton.addEventListener('click', async () => {
         console.log("Send button clicked. isTyping:", gameState.isTyping);
-        if (gameState.isTyping) return;
+        if (gameState.isTyping) {
+            console.log("Send button: Typing in progress, command ignored.");
+            return;
+        }
         const command = playerInput.value;
         if (command.trim()) {
-            playerInput.value = ''; // Clear input before handling
+            playerInput.value = ''; 
             await handlePlayerCommand(command);
         } else {
-            if(playerInput) playerInput.focus(); // Refocus if empty command
+            if(playerInput) playerInput.focus(); 
         }
     });
 } else { console.error("Submit button (submit-command) not found!"); }
@@ -488,10 +539,13 @@ if (playerInput) {
         if (event.key === 'Enter') {
             console.log("Enter key pressed. isTyping:", gameState.isTyping);
             event.preventDefault(); 
-            if (gameState.isTyping) return;
+            if (gameState.isTyping) {
+                console.log("Enter key: Typing in progress, command ignored.");
+                return;
+            }
             const command = playerInput.value;
             if (command.trim()) {
-                playerInput.value = ''; // Clear input before handling
+                playerInput.value = ''; 
                 await handlePlayerCommand(command);
             }
         }
@@ -504,7 +558,7 @@ if(closeHelpButton) {
 
 if(helpModal) {
     helpModal.addEventListener('click', (event) => { 
-        if (event.target === helpModal) { // Only close if overlay itself is clicked
+        if (event.target === helpModal) { 
             closeHelpModalFunc();
         }
     });
