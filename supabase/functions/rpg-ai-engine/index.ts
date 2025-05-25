@@ -13,7 +13,7 @@ const GEMINI_MODEL_NAME = "gemini-2.0-flash-lite"; // As per your last request
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_NAME}:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*", // IMPORTANT: For production, restrict this to your actual domain.
+  "Access-Control-Allow-Origin": "https://injoque.dev", // IMPORTANT: For production, restrict this to your actual domain.
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey", // Ensure all expected headers are listed
 };
