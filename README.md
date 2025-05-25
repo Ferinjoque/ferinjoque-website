@@ -163,10 +163,10 @@ The site features:
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details (if one exists, otherwise assume MIT as per badge).
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## 🙏 Acknowledgements
 
-* Bolt.new Team
+* GitHub Team
 * Supabase Team
-* Deno Team
+* Bolt.new Team
