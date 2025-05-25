@@ -13,10 +13,12 @@ const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const IPINFO_API_KEY = Deno.env.get('IPINFO_API_KEY'); // Optional
+const WEEKLY_REPORT_FROM_EMAIL = Deno.env.get('WEEKLY_REPORT_FROM_EMAIL');
+const WEEKLY_REPORT_TO_EMAIL = Deno.env.get('WEEKLY_REPORT_TO_EMAIL');
 
-if (!SUPABASE_URL || !SUPABASE_KEY || !OPENAI_API_KEY || !RESEND_API_KEY) {
-    console.error("FATAL ERROR: Missing required ENV vars (Supabase URL/Key, OpenAI Key, Resend Key)!");
-    throw new Error('Missing required environment variables');
+if (!SUPABASE_URL || !SUPABASE_KEY || !OPENAI_API_KEY || !RESEND_API_KEY || !WEEKLY_REPORT_FROM_EMAIL || !WEEKLY_REPORT_TO_EMAIL) {
+    console.error("FATAL ERROR: Missing required ENV vars (Supabase URL/Key, OpenAI Key, Resend Key, Report Emails)!");
+    throw new Error('Missing required environment variables, including report email addresses');
 }
 console.log("DEBUG: ENV vars loaded.");
 
@@ -248,7 +250,6 @@ serve(async (req: Request) => {
 
         // 6. Send Email via Resend
         console.log("DEBUG: Sending email report via Resend...");
-        // !! IMPORTANT: Replace FROM and TO email addresses below !!
         const emailSubject = `Weekly Website Analytics Report - ${endDate.toLocaleDateString()}`;
         const emailHtmlBody = `
             <h1>Website Analytics Summary</h1>
@@ -279,8 +280,8 @@ serve(async (req: Request) => {
                 "Authorization": `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: "Analyst <analyst@injoque.dev>",
-                to: ["github@injoque.dev"],
+                from: WEEKLY_REPORT_FROM_EMAIL,  // Using ENV variable
+                to: [WEEKLY_REPORT_TO_EMAIL],    // Using ENV variable (Resend expects an array for 'to')
                 subject: emailSubject,
                 html: emailHtmlBody,
             }),
