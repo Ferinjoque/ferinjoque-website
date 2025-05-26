@@ -460,3 +460,152 @@ body.rpg-body {
     text-align: center; /* Or align with spinner if spinner is also text-aligned */
     margin-bottom: 0.5rem !important; /* Space before spinner */
 }
+
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 150px); /* Adjust based on header/footer height */
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+.auth-panel {
+    background-color: var(--rpg-panel-bg);
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--rpg-border-color);
+    padding: 2rem 2.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+}
+
+.auth-panel h2 {
+    color: var(--rpg-primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+.auth-panel h3 {
+    color: var(--rpg-text-color);
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+
+.auth-intro {
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+#auth-forms {
+    margin-bottom: 1.5rem;
+}
+
+.auth-form {
+    margin-bottom: 2rem;
+}
+.auth-form:last-of-type {
+    margin-bottom: 1rem;
+}
+
+
+.auth-form .form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.85em;
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.auth-form input[type="email"],
+.auth-form input[type="password"] {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    background-color: var(--rpg-input-bg);
+    border: 1px solid var(--rpg-border-color);
+    border-radius: var(--border-radius);
+    color: var(--rpg-text-color);
+    font-family: var(--font-sans); /* Use sans-serif for auth forms */
+    font-size: 0.95em;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.auth-form input[type="email"]:focus,
+.auth-form input[type="password"]:focus {
+    outline: none;
+    border-color: var(--rpg-primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.auth-form .cta-button {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+}
+
+.guest-play {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rpg-border-color);
+}
+
+.guest-play .cta-button {
+    width: 100%;
+    padding: 0.8rem;
+}
+
+.auth-message {
+    margin-top: 0.8rem;
+    font-size: 0.85em;
+    min-height: 1.2em; /* Reserve space to prevent layout shifts */
+}
+
+.auth-message.success {
+    color: var(--rpg-primary-color);
+}
+
+.auth-message.error {
+    color: #F44336; /* Red for errors */
+}
+
+.auth-toggle {
+    margin-top: 1.5rem;
+    font-size: 0.9em;
+    color: var(--color-text-muted);
+}
+
+.auth-toggle a {
+    color: var(--rpg-primary-color);
+    text-decoration: underline;
+    font-weight: 500;
+}
+.auth-toggle a:hover {
+    color: var(--color-primary-light);
+}
+
+/* Style for the static processing text inside the spinner area if kept in HTML */
+.processing-indicator-text-static {
+    color: var(--rpg-accent-color, #3F51B5);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.micro-button { /* For small buttons like logout */
+    padding: 3px 8px !important;
+    font-size: 0.8em !important;
+    line-height: 1.2 !important;
+    min-width: auto !important;
+}
