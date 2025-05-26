@@ -1,27 +1,24 @@
-// supabase/functions/rpg-ai-engine/index.ts
-import { serve } from "std/http/server.ts"; // Using import map
+// supabase/functions/rpg-ai-engine/index.ts - Phase 1 Backend Improvements
+import { serve } from "std/http/server.ts"; //
 
-console.log("DEBUG: rpg-ai-engine function starting...");
+console.log("DEBUG: rpg-ai-engine function starting (Phase 1 Improvements)...");
 
 const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-// Ensure you are using the correct model name if you change it.
-// Defaulting to gemini-1.5-flash-latest as a robust starting point.
-// const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; // More cost-effective for frequent calls
-const GEMINI_MODEL_NAME = "gemini-2.0-flash-lite"; // As per your last request
-// const GEMINI_MODEL_NAME = "gemini-1.5-pro-latest"; // More powerful, potentially higher cost/slower
+// const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest";
+const GEMINI_MODEL_NAME = "gemini-2.0-flash-lite"; //
+// const GEMINI_MODEL_NAME = "gemini-1.5-pro-latest";
 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_NAME}:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://injoque.dev", // IMPORTANT: For production, restrict this to your actual domain.
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey", // Ensure all expected headers are listed
+  "Access-Control-Allow-Origin": "https://injoque.dev", //
+  "Access-Control-Allow-Methods": "POST, OPTIONS", //
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey", //
 };
 
 serve(async (req: Request) => {
   console.log(`DEBUG: Received invocation: ${req.method} ${req.url}`);
 
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     console.log("DEBUG: Handling OPTIONS request, sending 200 OK with CORS headers.");
     return new Response("ok", { headers: CORS_HEADERS });
@@ -30,7 +27,7 @@ serve(async (req: Request) => {
   if (req.method !== "POST") {
     console.warn(`WARN: Method ${req.method} not allowed. Only POST and OPTIONS are handled.`);
     return new Response(JSON.stringify({ error: "Method Not Allowed. Please use POST." }), {
-      status: 405, // Explicitly return 405 for non-POST, non-OPTIONS
+      status: 405,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json", "Allow": "POST, OPTIONS" },
     });
   }
@@ -43,9 +40,19 @@ serve(async (req: Request) => {
     });
   }
 
+  let body;
   try {
-    const body = await req.json();
+    body = await req.json();
     console.log("DEBUG: Parsed request body:", body);
+  } catch (parseError) {
+    console.error("ERROR: Invalid JSON in request body.", parseError);
+    return new Response(JSON.stringify({ error: "Invalid JSON payload." }), {
+        status: 400,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
+
+  try {
     const {
       currentGameState,
       playerCommand,
@@ -53,44 +60,59 @@ serve(async (req: Request) => {
       gameTheme
     } = body;
 
-    if (!currentGameState || typeof playerCommand === 'undefined' || !turnHistory || !gameTheme) {
-      console.error("ERROR: Invalid request payload. Missing one or more required fields.");
-      return new Response(JSON.stringify({ error: "Invalid request payload. Required fields: currentGameState, playerCommand, turnHistory, gameTheme." }), {
-        status: 400, // Bad Request
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
+    // --- Strengthened Payload Validation ---
+    if (!currentGameState || typeof currentGameState !== 'object') {
+        throw new Error("Invalid request: currentGameState is missing or not an object.");
     }
+    if (typeof currentGameState.playerName !== 'string' ||
+        !Array.isArray(currentGameState.inventory) ||
+        typeof currentGameState.sectorStability !== 'number' ||
+        typeof currentGameState.aiSync !== 'number' ||
+        typeof currentGameState.currentLocationDescription !== 'string') {
+        console.error("ERROR: Invalid currentGameState structure.", currentGameState);
+        throw new Error("Invalid request: currentGameState has missing or invalid fields.");
+    }
+    if (typeof playerCommand !== 'string') { // typeof undefined is 'undefined', so this catches missing too
+        throw new Error("Invalid request: playerCommand is missing or not a string.");
+    }
+    if (!Array.isArray(turnHistory)) {
+        throw new Error("Invalid request: turnHistory is missing or not an array.");
+    }
+    if (typeof gameTheme !== 'string') {
+        throw new Error("Invalid request: gameTheme is missing or not a string.");
+    }
+    // --- End Validation ---
     
     const geminiHistory = turnHistory.map(turn => ({
       role: turn.role === "user" ? "user" : "model",
       parts: [{ text: turn.content }]
     }));
 
-    // System instruction prompt (refined for clarity and to encourage better JSON)
     const systemInstruction = `You are GAIA Prime, an AI game master for a text-based RPG called Eco-Echoes.
-Themes: AI ethics, environmental sustainability in a sci-fi world. Player is "Warden".
+Themes: ${gameTheme}. Player is "${currentGameState.playerName}".
 Current Situation: ${currentGameState.currentLocationDescription || 'Just starting.'}
-Player: ${currentGameState.playerName}, Inv: ${currentGameState.inventory.length > 0 ? currentGameState.inventory.join(', ') : 'empty'}, Stability: ${currentGameState.sectorStability}%, Sync: ${currentGameState.aiSync}%
+Player Stats: Inventory: ${currentGameState.inventory.length > 0 ? currentGameState.inventory.join(', ') : 'empty'}, Sector Stability: ${currentGameState.sectorStability}%, AI Sync: ${currentGameState.aiSync}%
 Player Command: "${playerCommand}"
 
 Task: Generate the next story segment.
-Response MUST be a VALID JSON object like this:
+Response MUST be a VALID JSON object with the following structure:
 {
-  "storyText": "Narrative of what happens. Be descriptive and thematic.",
-  "choices": ["Actionable choice 1", "Actionable choice 2", "Actionable choice 3"],
-  "itemsFound": ["new_item_1"],
-  "statusUpdates": [{"statusName": "sectorStability", "newValue": ${currentGameState.sectorStability - 5}, "reason": "Reason if any"}],
-  "newLocationDescription": "Brief updated location summary if changed significantly."
+  "storyText": "Narrative of what happens. Be descriptive and thematic. Keep it to 2-4 sentences unless more is truly needed for a scene.",
+  "choices": ["Actionable choice 1", "Actionable choice 2", "Actionable choice 3 (optional)"],
+  "itemsFound": ["new_item_1 (if any)"],
+  "statusUpdates": [{"statusName": "sectorStability", "newValue": ${currentGameState.sectorStability - 5}, "reason": "Brief reason (optional)"}],
+  "newLocationDescription": "Brief updated location summary ONLY if the location or its immediate state changes significantly."
 }
 Rules:
-- storyText: Mandatory, detailed.
-- choices: Array of 2-4 short, actionable strings. If none specific, suggest general ones.
-- itemsFound: Array of strings. Empty [] if none.
-- statusUpdates: Array of objects. Empty [] if no change. Include 'statusName' and 'newValue'. 'reason' optional.
-- newLocationDescription: Update if location/situation changes substantially.
-- Adhere to themes: ${gameTheme}.
-- Output ONLY the valid JSON object. No other text, no markdown.
+- storyText: Mandatory, engaging, and descriptive.
+- choices: Array of 2-4 short, actionable string choices for the player. If no specific actions are obvious, provide general exploratory choices.
+- itemsFound: Array of strings representing item names. MUST be an array, e.g., [] if no items are found.
+- statusUpdates: Array of objects. Each object needs "statusName" (string) and "newValue" (number). "reason" (string) is optional. MUST be an array, e.g., [] if no status changes.
+- newLocationDescription: String. Only provide if substantially different from previous. Otherwise, can be omitted or null.
+- Maintain thematic consistency with AI ethics and environmental sustainability.
+- Output ONLY the valid JSON object. No other text, no markdown, no apologies or explanations.
 `;
+//
 
     const requestBodyForGemini = {
       contents: [
@@ -98,21 +120,20 @@ Rules:
         { role: "user", parts: [{text: systemInstruction}] },
       ],
       generationConfig: {
-        temperature: 0.75, // Slightly higher for more creative variance
+        temperature: 0.75, 
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 2048, 
-        // responseMimeType: "application/json", // Enable if supported by the exact Gemini model version for strict JSON output
+        // responseMimeType: "application/json", // Keep commented unless sure about model support
       },
-       safetySettings: [ // Standard safety settings
+       safetySettings: [ 
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      ]
+      ] //
     };
     console.log("DEBUG: Sending to Gemini API URL:", GEMINI_API_URL);
-    // console.log("DEBUG: Sending to Gemini this payload:", JSON.stringify(requestBodyForGemini, null, 2));
 
 
     const aiResponse = await fetch(GEMINI_API_URL, {
@@ -124,11 +145,11 @@ Rules:
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error(`ERROR: Gemini API request failed: ${aiResponse.status} ${aiResponse.statusText}`, errorText);
-      throw new Error(`Gemini API request failed: ${aiResponse.status} ${errorText}`);
+      throw new Error(`Gemini API request failed: ${aiResponse.status} - ${errorText}`);
     }
 
     const aiResult = await aiResponse.json();
-    // console.log("DEBUG: Raw Gemini Result:", JSON.stringify(aiResult, null, 2));
+    // console.log("DEBUG: Raw Gemini Result:", JSON.stringify(aiResult, null, 2)); // Keep for debugging if needed
 
     let responseJsonText = "";
     if (aiResult.candidates && aiResult.candidates[0] && aiResult.candidates[0].content && aiResult.candidates[0].content.parts && aiResult.candidates[0].content.parts[0]) {
@@ -142,11 +163,17 @@ Rules:
       throw new Error("Unexpected response structure from Gemini API.");
     }
     
-    // Clean potential markdown ```json ... ``` wrapper
-    responseJsonText = responseJsonText.replace(/^```json\s*([\s\S]*?)\s*```$/g, "$1").trim();
+    responseJsonText = responseJsonText.replace(/^```json\s*([\s\S]*?)\s*```$/g, "$1").trim(); //
     console.log("DEBUG: Cleaned JSON text from Gemini:", responseJsonText);
 
-    const parsedResponse = JSON.parse(responseJsonText); // This might throw if JSON is still invalid
+    let parsedResponse;
+    try {
+        parsedResponse = JSON.parse(responseJsonText);
+    } catch (jsonParseError) {
+        console.error("ERROR: Failed to parse JSON response from Gemini. Raw text:", responseJsonText, "Error:", jsonParseError);
+        throw new Error("AI response was not valid JSON. Please try again.");
+    }
+
 
     return new Response(JSON.stringify(parsedResponse), {
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
@@ -155,8 +182,12 @@ Rules:
 
   } catch (error) {
     console.error("FATAL ERROR in function execution:", error.message, error.stack);
-    return new Response(JSON.stringify({ error: error.message || "Failed to process AI request." }), {
-      status: 500,
+    // Ensure the error message sent to the client is somewhat generic but useful
+    const clientErrorMessage = error.message.startsWith("Invalid request:") || error.message.startsWith("AI response") 
+                               ? error.message 
+                               : "Failed to process AI request due to an internal error.";
+    return new Response(JSON.stringify({ error: clientErrorMessage, details: error.message }), { // Keep details for client-side logging if needed
+      status: error.message.startsWith("Invalid request:") ? 400 : 500, // Use 400 for bad client payload
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }
