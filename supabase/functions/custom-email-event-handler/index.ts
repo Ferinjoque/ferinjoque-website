@@ -32,34 +32,55 @@ interface EmailHookPayload {
   };
 }
 
-async function verifySupabaseHookJwt(req: Request, secret: string): Promise<boolean> {
+async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promise<boolean> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.warn("Missing or malformed Authorization header for hook.");
+    console.warn("Hook Verification: Missing or malformed Authorization header. Request will be rejected.");
     return false;
   }
-  const token = authHeader.substring(7);
+  const token = authHeader.substring(7); // Remove "Bearer "
+
+  let actualSecret = secretFromEnv;
+  // Supabase webhook secrets might have a "v1," prefix or be like "whsec_..."
+  // We typically need the part after "v1," or the "whsec_..." string itself for HS256.
+  if (secretFromEnv.startsWith("v1,")) {
+    console.log("Hook Verification: Detected 'v1,' prefix in secret. Using the part after the comma for verification.");
+    actualSecret = secretFromEnv.substring(secretFromEnv.indexOf(',') + 1);
+  } else {
+    console.log("Hook Verification: Using provided secret as is (no 'v1,' prefix detected).");
+  }
+
+  if (!actualSecret) {
+    console.error("Hook Verification: Effective secret is empty after processing. Cannot verify. Ensure SUPABASE_AUTH_HOOK_SECRET is correctly set.");
+    return false;
+  }
 
   try {
     const cryptoKey = await crypto.subtle.importKey(
         "raw",
-        new TextEncoder().encode(secret),
+        new TextEncoder().encode(actualSecret), // Use the processed secret
         { name: "HMAC", hash: "SHA-256" },
         false,
         ["verify"]
     );
-    await verify(token, cryptoKey);
-    // Note: For stricter validation, you could decode the token first using `decode(token)`
-    // from `djwt` and check claims like `payload.iss === 'supabase'` and `payload.aud === SUPABASE_PROJECT_REF`.
-    // The `verify` function itself primarily checks the signature and expiration.
+
+    const decodedPayload = await verify(token, cryptoKey);
     console.log("Hook JWT successfully verified.");
+
+    // Optional: Stricter validation of claims
+    // const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF");
+    // if (SUPABASE_PROJECT_REF && decodedPayload.aud !== SUPABASE_PROJECT_REF) {
+    //   console.error(`Hook JWT Audience Mismatch: Expected '${SUPABASE_PROJECT_REF}', got '${decodedPayload.aud}'. Request rejected.`);
+    //   return false;
+    // }
+    // if (decodedPayload.iss !== 'supabase') { // Or specific issuer for hooks
+    //   console.error(`Hook JWT Issuer Mismatch: Expected 'supabase', got '${decodedPayload.iss}'. Request rejected.`);
+    //   return false;
+    // }
+
     return true;
   } catch (err) {
-    console.error("Hook JWT verification failed:", err.message);
-    // Log more details from the error if available, e.g., err.name
-    if (err.name === "JwtAlgorithmNotImplemented" || err.name === "JwtTokenInvalid") {
-        // Common issues with token or key
-    }
+    console.error(`Hook JWT verification failed: ${err.message} (Error Name: ${err.name}). Ensure SUPABASE_AUTH_HOOK_SECRET is correct and matches the one configured for the hook in the Supabase dashboard.`);
     return false;
   }
 }
