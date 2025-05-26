@@ -413,7 +413,18 @@ async function handleRegistration(event) {
     registerMessage.textContent = 'Registering...';
     registerMessage.className = 'auth-message';
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // Inside handleRegistration function
+    const usernamePart = email.substring(0, email.indexOf('@')); // Extract part before @
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: {
+                username: usernamePart, // Pass the extracted username
+                // You can add other initial data here if needed later
+            }
+        }
+    });
 
     if (error) {
         registerMessage.textContent = `Registration failed: ${error.message}`;
