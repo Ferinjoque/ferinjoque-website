@@ -1,5 +1,5 @@
 // supabase/functions/custom-email-event-handler/index.ts (Simplified for Logging Test)
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts"; // Using direct URL for simplicity in this test
+import { serve } from "std/http/server.ts"; // Using direct URL for simplicity in this test
 
 console.log("MINIMAL HANDLER: Top-level log reached. Function is alive.");
 
