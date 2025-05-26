@@ -5,11 +5,11 @@ import { verify } from "djwt"; // Relies on import_map.json
 
 console.log("DEBUG: custom-email-event-handler function starting with JWT verification (using import map)...");
 
-const HOOK_SECRET = Deno.env.get("SUPABASE_AUTH_HOOK_SECRET");
+const HOOK_SECRET = Deno.env.get("SUPA_AUTH_HOOK_SECRET");
 const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF"); // Potentially for 'aud' claim
 
 if (!HOOK_SECRET) {
-  console.error("FATAL ERROR: SUPABASE_AUTH_HOOK_SECRET environment variable is not set.");
+  console.error("FATAL ERROR: SUPA_AUTH_HOOK_SECRET environment variable is not set.");
 }
 if (!SUPABASE_PROJECT_REF && HOOK_SECRET) {
   console.warn("WARN: SUPABASE_PROJECT_REF environment variable is not set. JWT 'aud' claim verification might be affected.");
@@ -78,7 +78,7 @@ serve(async (req: Request) => {
       });
     }
   } else {
-    console.warn("WARNING: SUPABASE_AUTH_HOOK_SECRET is not set. Hook request is not being verified. This is insecure for production.");
+    console.warn("WARNING: SUPA_AUTH_HOOK_SECRET is not set. Hook request is not being verified. This is insecure for production.");
     // In a production environment, you should strictly require the secret and fail if it's not present.
     // Example:
     // return new Response(JSON.stringify({ error: "Configuration error: Hook secret missing." }), {
