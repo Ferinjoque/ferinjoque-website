@@ -1,25 +1,23 @@
 // supabase/functions/custom-email-event-handler/index.ts
 import { serve } from "std/http/server.ts";
-import { createClient, SupabaseClient } from "supabase"; // Relies on import_map.json
-import { verify } from "djwt"; // Relies on import_map.json
+// createClient and SupabaseClient might not be needed in this specific function
+// if you are only handling the hook and not making other Supabase calls.
+// import { createClient, SupabaseClient } from "supabase";
 
-console.log("DEBUG: custom-email-event-handler function starting with JWT verification (using import map)...");
+console.log("DEBUG: custom-email-event-handler function starting for Webhook Verification...");
 
 const HOOK_SECRET = Deno.env.get("SUPA_AUTH_HOOK_SECRET");
-const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF"); // Potentially for 'aud' claim
 
-// Initial checks for environment variables at the top level (these logs will appear once on function cold start)
+// Initial check for environment variable
 if (!HOOK_SECRET) {
   console.error("INITIALIZATION FATAL ERROR: SUPA_AUTH_HOOK_SECRET environment variable is not set. This function cannot operate securely.");
-}
-if (!SUPABASE_PROJECT_REF && HOOK_SECRET) { // Only warn if project ref is missing but hook secret is present (as it's optional for basic verify)
-  console.warn("INITIALIZATION WARN: SUPABASE_PROJECT_REF environment variable is not set. Stricter JWT 'aud' claim verification might be affected or skipped.");
+  // For a real deployment, you might want the function to not even start or to always return an error.
 }
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*", // You might want to restrict this to your actual domain in production
-  "Access-Control-Allow-Methods": "POST, OPTIONS", // Added OPTIONS
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Origin": "*", // Restrict in production
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, webhook-id, webhook-signature, webhook-timestamp", // Added webhook headers
 };
 
 interface EmailHookPayload {
@@ -34,96 +32,132 @@ interface EmailHookPayload {
   };
 }
 
-async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promise<boolean> {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.warn("Hook Verification: Missing or malformed Authorization header. Request will be rejected by JWT check.");
+async function verifySupabaseWebhook(
+  req: Request,
+  rawBody: string, // We need the raw body string for signature
+  secret: string
+): Promise<boolean> {
+  const webhookId = req.headers.get("webhook-id");
+  const webhookSignature = req.headers.get("webhook-signature");
+  const webhookTimestamp = req.headers.get("webhook-timestamp");
+
+  if (!webhookId || !webhookSignature || !webhookTimestamp) {
+    console.warn("Webhook Verification: Missing one or more webhook headers (id, signature, timestamp).");
     return false;
   }
-  const token = authHeader.substring(7); // Remove "Bearer "
 
-  let actualSecret = secretFromEnv;
-  if (secretFromEnv.startsWith("v1,")) {
-    console.log("Hook Verification: Detected 'v1,' prefix in secret. Using the part after the comma for verification.");
-    actualSecret = secretFromEnv.substring(secretFromEnv.indexOf(',') + 1);
-  } else {
-    console.log("Hook Verification: Using provided secret as is (no 'v1,' prefix detected).");
+  let actualSecret = secret;
+  if (secret.startsWith("v1,")) { // Assuming your secret might still have this prefix from copy-pasting
+    console.log("Webhook Verification: Detected 'v1,' prefix in secret. Using the part after the comma.");
+    actualSecret = secret.substring(3);
   }
-
+  
   if (!actualSecret) {
-    console.error("Hook Verification: Effective secret is empty after processing. Cannot verify. Ensure SUPA_AUTH_HOOK_SECRET is correctly set.");
+    console.error("Webhook Verification: Effective secret is empty after processing.");
     return false;
   }
+
+  const signatureParts = webhookSignature.split(",");
+  const signatureVersion = signatureParts[0]; // Should be "v1"
+  const providedSignature = signatureParts[1];
+
+  if (signatureVersion !== "v1" || !providedSignature) {
+    console.warn(`Webhook Verification: Invalid signature format. Expected 'v1,signature', got '${webhookSignature}'.`);
+    return false;
+  }
+
+  const stringToSign = `${webhookId}.${webhookTimestamp}.${rawBody}`;
 
   try {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(actualSecret);
+    const dataToSign = encoder.encode(stringToSign);
+
     const cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(actualSecret), // Use the processed secret
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["verify"]
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
     );
 
-    const decodedPayload = await verify(token, cryptoKey);
-    console.log("Hook JWT successfully verified.");
-    // You can add aud/iss checks here using decodedPayload if needed:
-    // Example: if (decodedPayload.aud !== SUPABASE_PROJECT_REF) { console.error("Invalid JWT audience"); return false; }
-    // Example: if (decodedPayload.iss !== `https://<YOUR_PROJECT_REF>.supabase.co/auth/v1`) { console.error("Invalid JWT issuer"); return false; }
-    return true;
+    const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, dataToSign);
+    
+    // Convert ArrayBuffer to Base64
+    // Deno's std/encoding/base64.ts could be used, or a manual conversion:
+    const signatureBytes = new Uint8Array(signatureBuffer);
+    let binary = '';
+    for (let i = 0; i < signatureBytes.byteLength; i++) {
+        binary += String.fromCharCode(signatureBytes[i]);
+    }
+    const calculatedSignature = btoa(binary);    
+
+    if (calculatedSignature === providedSignature) {
+      console.log("Webhook signature successfully verified.");
+      return true;
+    } else {
+      console.warn("Webhook Verification: Signature mismatch.");
+      console.log(`Provided: ${providedSignature}, Calculated: ${calculatedSignature}`);
+      return false;
+    }
   } catch (err) {
-    console.error(`Hook JWT verification failed: ${err.message} (Error Name: ${err.name}). Ensure SUPA_AUTH_HOOK_SECRET is correct and matches the one configured for the hook in the Supabase dashboard.`);
+    console.error(`Webhook Verification: Error during signature calculation: ${err.message}`, err);
     return false;
   }
 }
 
 serve(async (req: Request) => {
-  // This top-level log inside serve should appear for every invocation
   console.log(`Invocation received for custom-email-event-handler. Method: ${req.method}`);
 
-  // TEMPORARY: Log all incoming headers
-  const headersObject: { [key: string]: string } = {}; // Define type for headersObject
+  // Log all headers for debugging (can be removed later)
+  const headersObject: { [key: string]: string } = {};
   for (const [key, value] of req.headers.entries()) {
     headersObject[key] = value;
   }
   console.log("DEBUG: Incoming request headers:", JSON.stringify(headersObject, null, 2));
-  // END TEMPORARY LOGGING
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
-  // **REFINED SECRET CHECK BLOCK**
   if (!HOOK_SECRET) {
-    // This console.error should appear in logs if the secret is not set AT ALL.
-    console.error("CRITICAL RUNTIME ERROR: SUPA_AUTH_HOOK_SECRET environment variable is not available. Hook cannot proceed securely.");
-    return new Response(JSON.stringify({ error: "Webhook security configuration error on server: Secret not configured." }), {
-      status: 500, // Internal Server Error because the server (function) is misconfigured
+    console.error("CRITICAL RUNTIME ERROR: SUPA_AUTH_HOOK_SECRET not available. Hook cannot proceed.");
+    return new Response(JSON.stringify({ error: "Webhook security configuration error on server." }), {
+      status: 500,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }
 
-  // If HOOK_SECRET is present, proceed with JWT verification.
-  const isVerified = await verifySupabaseHookJwt(req, HOOK_SECRET);
-  if (!isVerified) {
-    // verifySupabaseHookJwt already logs the specific reason for JWT failure.
-    // A 401 status is appropriate here. Supabase Auth should see this and might report "Error running hook URI".
-    return new Response(JSON.stringify({ error: "Unauthorized. Invalid hook signature." }), {
-      status: 401,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
-  }
-  // **END OF REFINED SECRET CHECK BLOCK**
-
-  // If JWT is verified (isVerified is true), THEN proceed.
-  console.log("Hook JWT VERIFIED. Proceeding to process payload.");
+  // Read the raw body first, as it's needed for verification and can only be read once.
+  let rawBody;
   try {
-    const payload: EmailHookPayload = await req.json();
-    console.log("Custom Email Event Handler Hook received payload (JWT VERIFIED):", JSON.stringify(payload, null, 2));
+    rawBody = await req.text(); // Get raw body as text
+  } catch (bodyError) {
+    console.error("Error reading request body:", bodyError);
+    return new Response(JSON.stringify({ error: "Could not read request body."}), {
+        status: 400,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json"},
+    });
+  }
+  
+  const isVerified = await verifySupabaseWebhook(req, rawBody, HOOK_SECRET);
+  if (!isVerified) {
+    console.warn("Webhook verification failed. Rejecting request.");
+    return new Response(JSON.stringify({ error: "Unauthorized. Invalid webhook signature." }), {
+      status: 401, // Use 401 or 403
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
+
+  console.log("Webhook VERIFIED. Proceeding to process payload.");
+  try {
+    const payload: EmailHookPayload = JSON.parse(rawBody); // Parse the rawBody we already read
+    console.log("Custom Email Event Handler Hook received payload (VERIFIED):", JSON.stringify(payload, null, 2));
 
     if (payload.type === 'signup') {
-      console.log(`Supabase Auth tried to send a 'signup' email for ${payload.email}. Suppressing it as the custom client-side flow will handle this type of email via the 'initiate-email-verification' function.`);
+      console.log(`Supabase Auth tried to send a 'signup' email for ${payload.email}. Suppressing it.`);
       return new Response(
-        JSON.stringify({ message: "Signup email event received by hook; custom client flow is responsible for sending." }),
+        JSON.stringify({ message: "Signup email event received and acknowledged by hook." }),
         {
           headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
           status: 200,
@@ -131,22 +165,18 @@ serve(async (req: Request) => {
       );
     }
 
-    // For any other email types (recovery, magiclink, invite, email_change),
-    // this hook will currently suppress Supabase's default email without sending its own.
-    // If you want to customize those emails too, you'd add logic here to call Resend, similar
-    // to what you have in 'initiate-email-verification'.
-    console.warn(`Email hook received for type: '${payload.type}' for ${payload.email}. No custom sending action defined in this hook for this type. Supabase's default sending for this type will be suppressed by this hook.`);
+    console.warn(`Email hook received for type: '${payload.type}' for ${payload.email}. Default Supabase email suppressed.`);
     return new Response(
-      JSON.stringify({ message: `Email event type '${payload.type}' received and acknowledged. Default Supabase email for this type is suppressed by this hook.` }),
+      JSON.stringify({ message: `Email event type '${payload.type}' received and acknowledged. Default Supabase email suppressed.` }),
       {
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        status: 200, // Important to return 200 to Supabase Auth
+        status: 200,
       }
     );
 
   } catch (error) {
-    console.error("Error in custom-email-event-handler function (after JWT verification, during payload processing):", error.message, error.stack);
-    return new Response(JSON.stringify({ error: error.message || "Internal server error in email hook after verification." }), {
+    console.error("Error processing payload after verification:", error.message, error.stack);
+    return new Response(JSON.stringify({ error: "Error processing payload."}), {
       status: 500,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
