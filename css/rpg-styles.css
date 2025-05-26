@@ -228,7 +228,7 @@ body.rpg-body {
 }
 
 .system-message {
-    color: var(--rpg-accent-color); 
+    color: var(--rpg-accent-color, #3F51B5); 
     font-style: italic;
     font-size: 0.95em;
     margin-top: 0.6em !important;
@@ -371,6 +371,9 @@ body.rpg-body {
     align-items: center;
     gap: 0.5rem;
 }
+.loading-indicator p { /* Style for the text inside loading-indicator if you add one */
+    margin-bottom: 0.5rem;
+}
 
 .spinner {
     border: 4px solid rgba(255, 255, 255, 0.2);
@@ -433,5 +436,27 @@ body.rpg-body {
     flex-direction: column; /* Added */
 }
 .story-output-panel p.story-text-line {
-    width: 100%; /* Ensure paragraphs take full width */
+    margin-bottom: 0.8em !important; 
+    line-height: 1.6;
+    /* Ensure paragraphs can take up full width for better readability if they were constrained */
+    /* width: 100%;  -- Might not be needed if parent flex properties are correct */
+}
+
+.error-message { /* New class for error messages */
+    color: #F44336; /* A distinct error color (e.g., red) */
+    font-style: italic;
+    font-weight: bold;
+    font-size: 0.95em;
+    margin-top: 0.6em !important;
+    margin-bottom: 0.6em !important;
+    padding: 0.3em 0.5em;
+    background-color: rgba(244, 67, 54, 0.1);
+    border-left: 3px solid #F44336;
+}
+
+.processing-indicator-text {
+    color: var(--rpg-accent-color, #3F51B5);
+    font-style: italic;
+    text-align: center; /* Or align with spinner if spinner is also text-aligned */
+    margin-bottom: 0.5rem !important; /* Space before spinner */
 }
