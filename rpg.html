@@ -26,6 +26,10 @@
                     <h1 class="game-title">Eco-Echoes</h1>
                     <span class="game-subtitle">An AI Chronicle</span>
                 </div>
+                <div id="user-status-area" style="display: none; color: var(--rpg-text-color); font-size: 0.9em; margin-right: 1rem;">
+                    Logged in as: <span id="user-email-display"></span>
+                    <button id="logout-button" class="cta-button micro-button" style="margin-left: 10px; padding: 3px 8px; font-size: 0.8em;">Logout</button>
+                </div>
                 <div class="theme-toggle icon-button" title="Toggle Theme (Eco Mode)">
                     <span class="material-icons theme-icon">eco</span>
                 </div>
@@ -33,13 +37,60 @@
         </div>
     </header>
 
-    <main id="game-container" class="container rpg-main">
+    <div id="auth-ui-container" class="container rpg-main auth-container">
+        <div class="auth-panel">
+            <h2>Welcome to Eco-Echoes</h2>
+            <p class="auth-intro">Embark on a journey exploring AI ethics and environmental sustainability. Register to save your progress or play as a guest.</p>
+
+            <div id="auth-forms">
+                <form id="login-form" class="auth-form">
+                    <h3>Login</h3>
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="cta-button">Login</button>
+                    <p class="auth-message" id="login-message"></p>
+                </form>
+
+                <form id="register-form" class="auth-form">
+                    <h3>Register</h3>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <button type="submit" class="cta-button">Register</button>
+                    <p class="auth-message" id="register-message"></p>
+                </form>
+            </div>
+
+            <div class="guest-play">
+                <button id="play-guest-button" class="cta-button cta-secondary">Play as Guest</button>
+            </div>
+             <p class="auth-toggle">
+                New here? <a href="#" id="show-register-link">Create an account</a>
+            </p>
+            <p class="auth-toggle" style="display:none;">
+                Already have an account? <a href="#" id="show-login-link">Login here</a>
+            </p>
+        </div>
+    </div>
+
+    <div id="game-ui-container" class="container rpg-main" style="display:none;">
         <div id="story-output" class="story-output-panel">
             <p>Initializing GAIA Prime interface...</p>
         </div>
 
         <div id="ai-loading-indicator" class="loading-indicator" style="display:none;">
-            <p>GAIA Prime is processing...</p>
+            <p class="processing-indicator-text-static">GAIA Prime is processing...</p>
             <div class="spinner"></div>
         </div>
 
@@ -71,7 +122,7 @@
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <div id="help-modal" class="modal-overlay">
         <div class="modal-content">
@@ -81,11 +132,11 @@
                 <p>Interact by typing commands or clicking suggested actions.</p>
                 <p>Common commands:
                     <ul>
-                        <li><strong>look around</strong>: Get a description of your surroundings.</li>
+                        <li><strong>look around</strong> or <strong>l</strong>: Get a description of your surroundings.</li>
                         <li><strong>examine [thing/person]</strong>: Get more details.</li>
                         <li><strong>take [item]</strong>: Pick up an item.</li>
                         <li><strong>use [item]</strong> or <strong>use [item] on [target]</strong></li>
-                        <li><strong>inventory</strong> or <strong>i</strong>: Check your items.</li>
+                        <li><strong>inventory</strong> or <strong>i</strong> / <strong>inv</strong>: Check your items.</li>
                         <li><strong>status</strong>: Check your current status.</li>
                         <li><strong>talk to [person]</strong></li>
                         <li>Or, try describing what you want to do, like "try to open the door" or "ask the robot about the power fluctuations".</li>
@@ -102,6 +153,8 @@
             <p class="eco-info">Eco-Echoes: An AI-driven narrative exploring sustainability.</p>
         </div>
     </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script type="module" src="/js/rpg.js"></script>
 </body>
