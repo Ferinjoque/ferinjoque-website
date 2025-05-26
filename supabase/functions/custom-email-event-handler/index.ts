@@ -17,7 +17,8 @@ if (!SUPABASE_PROJECT_REF && HOOK_SECRET) { // Only warn if project ref is missi
 }
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "*", // You might want to restrict this to your actual domain in production
+  "Access-Control-Allow-Methods": "POST, OPTIONS", // Added OPTIONS
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -65,7 +66,9 @@ async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promi
 
     const decodedPayload = await verify(token, cryptoKey);
     console.log("Hook JWT successfully verified.");
-    // You can add aud/iss checks here using decodedPayload if needed
+    // You can add aud/iss checks here using decodedPayload if needed:
+    // Example: if (decodedPayload.aud !== SUPABASE_PROJECT_REF) { console.error("Invalid JWT audience"); return false; }
+    // Example: if (decodedPayload.iss !== `https://<YOUR_PROJECT_REF>.supabase.co/auth/v1`) { console.error("Invalid JWT issuer"); return false; }
     return true;
   } catch (err) {
     console.error(`Hook JWT verification failed: ${err.message} (Error Name: ${err.name}). Ensure SUPA_AUTH_HOOK_SECRET is correct and matches the one configured for the hook in the Supabase dashboard.`);
@@ -76,6 +79,14 @@ async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promi
 serve(async (req: Request) => {
   // This top-level log inside serve should appear for every invocation
   console.log(`Invocation received for custom-email-event-handler. Method: ${req.method}`);
+
+  // TEMPORARY: Log all incoming headers
+  const headersObject: { [key: string]: string } = {}; // Define type for headersObject
+  for (const [key, value] of req.headers.entries()) {
+    headersObject[key] = value;
+  }
+  console.log("DEBUG: Incoming request headers:", JSON.stringify(headersObject, null, 2));
+  // END TEMPORARY LOGGING
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
@@ -120,12 +131,16 @@ serve(async (req: Request) => {
       );
     }
 
+    // For any other email types (recovery, magiclink, invite, email_change),
+    // this hook will currently suppress Supabase's default email without sending its own.
+    // If you want to customize those emails too, you'd add logic here to call Resend, similar
+    // to what you have in 'initiate-email-verification'.
     console.warn(`Email hook received for type: '${payload.type}' for ${payload.email}. No custom sending action defined in this hook for this type. Supabase's default sending for this type will be suppressed by this hook.`);
     return new Response(
       JSON.stringify({ message: `Email event type '${payload.type}' received and acknowledged. Default Supabase email for this type is suppressed by this hook.` }),
       {
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        status: 200,
+        status: 200, // Important to return 200 to Supabase Auth
       }
     );
 
