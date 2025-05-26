@@ -1,33 +1,39 @@
-// supabase/functions/custom-email-event-handler/index.ts (Simplified for Logging Test)
-import { serve } from "std/http/server.ts"; // Using direct URL for simplicity in this test
+// supabase/functions/custom-email-event-handler/index.ts (Ultra-Minimal Logging Test)
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-console.log("MINIMAL HANDLER: Top-level log reached. Function is alive.");
+// This log should appear if the Deno runtime for this function even starts
+console.log("ULTRA-MINIMAL HANDLER: Top-level execution log. Function file is being read.");
 
 serve(async (req: Request) => {
-  console.log(`MINIMAL HANDLER: Request received. Method: ${req.method}`);
+  // This log should appear if Supabase Auth successfully makes an HTTP request to this function
+  console.log(`ULTRA-MINIMAL HANDLER: Request received! Method: ${req.method}`);
   
-  let requestBodyText = "[Could not read body]";
+  const requestTimestamp = new Date().toISOString();
+  let bodyText = "[Not attempted to read body yet]"; // Default
+
   try {
-    requestBodyText = await req.text(); // Just get the raw body as text
-    console.log("MINIMAL HANDLER: Raw request body:", requestBodyText);
+    // Log all headers to see what's coming in, especially Authorization
+    const headersObject = Object.fromEntries(req.headers.entries());
+    console.log("ULTRA-MINIMAL HANDLER: Request Headers:", JSON.stringify(headersObject, null, 2));
+
+    bodyText = await req.text();
+    console.log("ULTRA-MINIMAL HANDLER: Raw Request Body:", bodyText);
   } catch (e) {
-    console.error("MINIMAL HANDLER: Error reading request body:", e.message);
+    console.error("ULTRA-MINIMAL HANDLER: Error reading request body or headers:", e.message);
+    bodyText = `[Error reading body: ${e.message}]`;
   }
 
-  // For this test, always respond with 200 OK to see if Supabase Auth is satisfied
-  // and to check if the client-side error changes.
-  const responsePayload = {
-    hook_received: true,
-    message: "Minimal handler processed the request.",
-    method: req.method,
-    body_preview: requestBodyText.substring(0, 100) // Send back a preview
-  };
-
+  // ALWAYS return 200 OK for this test to see if it satisfies the hook mechanism
+  // and stops the "Error running hook URI" on the client.
   return new Response(
-    JSON.stringify(responsePayload),
+    JSON.stringify({
+      message: "Ultra-minimal hook handler acknowledged the request.",
+      timestamp: requestTimestamp,
+      received_body_preview: bodyText.substring(0, 200)
+    }),
     {
       headers: { "Content-Type": "application/json" },
-      status: 200, // Crucial: respond 200 to Auth Hook
+      status: 200,
     }
   );
 });
