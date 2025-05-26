@@ -8,11 +8,12 @@ console.log("DEBUG: custom-email-event-handler function starting with JWT verifi
 const HOOK_SECRET = Deno.env.get("SUPA_AUTH_HOOK_SECRET");
 const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF"); // Potentially for 'aud' claim
 
+// Initial checks for environment variables at the top level (these logs will appear once on function cold start)
 if (!HOOK_SECRET) {
-  console.error("FATAL ERROR: SUPA_AUTH_HOOK_SECRET environment variable is not set.");
+  console.error("INITIALIZATION FATAL ERROR: SUPA_AUTH_HOOK_SECRET environment variable is not set. This function cannot operate securely.");
 }
-if (!SUPABASE_PROJECT_REF && HOOK_SECRET) {
-  console.warn("WARN: SUPABASE_PROJECT_REF environment variable is not set. JWT 'aud' claim verification might be affected.");
+if (!SUPABASE_PROJECT_REF && HOOK_SECRET) { // Only warn if project ref is missing but hook secret is present (as it's optional for basic verify)
+  console.warn("INITIALIZATION WARN: SUPABASE_PROJECT_REF environment variable is not set. Stricter JWT 'aud' claim verification might be affected or skipped.");
 }
 
 const CORS_HEADERS = {
@@ -35,14 +36,12 @@ interface EmailHookPayload {
 async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promise<boolean> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.warn("Hook Verification: Missing or malformed Authorization header. Request will be rejected.");
+    console.warn("Hook Verification: Missing or malformed Authorization header. Request will be rejected by JWT check.");
     return false;
   }
   const token = authHeader.substring(7); // Remove "Bearer "
 
   let actualSecret = secretFromEnv;
-  // Supabase webhook secrets might have a "v1," prefix or be like "whsec_..."
-  // We typically need the part after "v1," or the "whsec_..." string itself for HS256.
   if (secretFromEnv.startsWith("v1,")) {
     console.log("Hook Verification: Detected 'v1,' prefix in secret. Using the part after the comma for verification.");
     actualSecret = secretFromEnv.substring(secretFromEnv.indexOf(',') + 1);
@@ -51,7 +50,7 @@ async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promi
   }
 
   if (!actualSecret) {
-    console.error("Hook Verification: Effective secret is empty after processing. Cannot verify. Ensure SUPABASE_AUTH_HOOK_SECRET is correctly set.");
+    console.error("Hook Verification: Effective secret is empty after processing. Cannot verify. Ensure SUPA_AUTH_HOOK_SECRET is correctly set.");
     return false;
   }
 
@@ -66,51 +65,49 @@ async function verifySupabaseHookJwt(req: Request, secretFromEnv: string): Promi
 
     const decodedPayload = await verify(token, cryptoKey);
     console.log("Hook JWT successfully verified.");
-
-    // Optional: Stricter validation of claims
-    // const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF");
-    // if (SUPABASE_PROJECT_REF && decodedPayload.aud !== SUPABASE_PROJECT_REF) {
-    //   console.error(`Hook JWT Audience Mismatch: Expected '${SUPABASE_PROJECT_REF}', got '${decodedPayload.aud}'. Request rejected.`);
-    //   return false;
-    // }
-    // if (decodedPayload.iss !== 'supabase') { // Or specific issuer for hooks
-    //   console.error(`Hook JWT Issuer Mismatch: Expected 'supabase', got '${decodedPayload.iss}'. Request rejected.`);
-    //   return false;
-    // }
-
+    // You can add aud/iss checks here using decodedPayload if needed
     return true;
   } catch (err) {
-    console.error(`Hook JWT verification failed: ${err.message} (Error Name: ${err.name}). Ensure SUPABASE_AUTH_HOOK_SECRET is correct and matches the one configured for the hook in the Supabase dashboard.`);
+    console.error(`Hook JWT verification failed: ${err.message} (Error Name: ${err.name}). Ensure SUPA_AUTH_HOOK_SECRET is correct and matches the one configured for the hook in the Supabase dashboard.`);
     return false;
   }
 }
 
 serve(async (req: Request) => {
+  // This top-level log inside serve should appear for every invocation
+  console.log(`Invocation received for custom-email-event-handler. Method: ${req.method}`);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
 
-  if (HOOK_SECRET) {
-    const isVerified = await verifySupabaseHookJwt(req, HOOK_SECRET);
-    if (!isVerified) {
-      return new Response(JSON.stringify({ error: "Unauthorized. Invalid hook signature." }), {
-        status: 401,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
-  } else {
-    console.warn("WARNING: SUPA_AUTH_HOOK_SECRET is not set. Hook request is not being verified. This is insecure for production.");
-    // In a production environment, you should strictly require the secret and fail if it's not present.
-    // Example:
-    // return new Response(JSON.stringify({ error: "Configuration error: Hook secret missing." }), {
-    //   status: 500,
-    //   headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    // });
+  // **REFINED SECRET CHECK BLOCK**
+  if (!HOOK_SECRET) {
+    // This console.error should appear in logs if the secret is not set AT ALL.
+    console.error("CRITICAL RUNTIME ERROR: SUPA_AUTH_HOOK_SECRET environment variable is not available. Hook cannot proceed securely.");
+    return new Response(JSON.stringify({ error: "Webhook security configuration error on server: Secret not configured." }), {
+      status: 500, // Internal Server Error because the server (function) is misconfigured
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
   }
 
+  // If HOOK_SECRET is present, proceed with JWT verification.
+  const isVerified = await verifySupabaseHookJwt(req, HOOK_SECRET);
+  if (!isVerified) {
+    // verifySupabaseHookJwt already logs the specific reason for JWT failure.
+    // A 401 status is appropriate here. Supabase Auth should see this and might report "Error running hook URI".
+    return new Response(JSON.stringify({ error: "Unauthorized. Invalid hook signature." }), {
+      status: 401,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
+  // **END OF REFINED SECRET CHECK BLOCK**
+
+  // If JWT is verified (isVerified is true), THEN proceed.
+  console.log("Hook JWT VERIFIED. Proceeding to process payload.");
   try {
     const payload: EmailHookPayload = await req.json();
-    console.log("Custom Email Event Handler Hook received payload (after verification):", JSON.stringify(payload, null, 2));
+    console.log("Custom Email Event Handler Hook received payload (JWT VERIFIED):", JSON.stringify(payload, null, 2));
 
     if (payload.type === 'signup') {
       console.log(`Supabase Auth tried to send a 'signup' email for ${payload.email}. Suppressing it as the custom client-side flow will handle this type of email via the 'initiate-email-verification' function.`);
@@ -133,8 +130,8 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error("Error in custom-email-event-handler function (after payload processing):", error);
-    return new Response(JSON.stringify({ error: error.message || "Internal server error in email hook." }), {
+    console.error("Error in custom-email-event-handler function (after JWT verification, during payload processing):", error.message, error.stack);
+    return new Response(JSON.stringify({ error: error.message || "Internal server error in email hook after verification." }), {
       status: 500,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
