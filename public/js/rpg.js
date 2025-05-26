@@ -61,11 +61,11 @@ let commandHistory = [];
 let historyIndex = -1;
 
 // --- Supabase Client Initialization ---
-const SUPABASE_PROJECT_URL = 'https://sueybbrfwiqviollreiu.supabase.co'; // <<<<<<< REPLACE THIS
+const SUPABASE_PROJECT_URL = 'https://sueybbrfwiqviollreiu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXliYnJmd2lxdmlvbGxyZWl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMTc0ODIsImV4cCI6MjA2MTg5MzQ4Mn0.7_gmmA5Ra1b43BOQ83pr7SZ0lTGjaemYaebkYSm99pw';    // <<<<<<< REPLACE THIS
 let supabase = null;
 
-if (SUPABASE_PROJECT_URL === 'https://sueybbrfwiqviollreiu.supabase.co' || SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXliYnJmd2lxdmlvbGxyZWl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMTc0ODIsImV4cCI6MjA2MTg5MzQ4Mn0.7_gmmA5Ra1b43BOQ83pr7SZ0lTGjaemYaebkYSm99pw') {
+if (SUPABASE_PROJECT_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
     console.error("CRITICAL: Supabase URL or Anon Key is not configured. Please update rpg.js");
     // Display a visible error on the page if these are not set
     const body = document.querySelector('body');
