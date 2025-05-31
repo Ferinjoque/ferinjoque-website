@@ -1,19 +1,16 @@
-// supabase/functions/rpg-ai-engine/index.ts - Phase 1 Backend Improvements
-import { serve } from "std/http/server.ts"; //
+import { serve } from "std/http/server.ts";
 
-console.log("DEBUG: rpg-ai-engine function starting (Phase 1 Improvements)...");
+console.log("DEBUG: rpg-ai-engine function starting...");
 
 const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
-// const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest";
-const GEMINI_MODEL_NAME = "gemini-2.0-flash-lite"; //
-// const GEMINI_MODEL_NAME = "gemini-1.5-pro-latest";
+const GEMINI_MODEL_NAME = "gemini-2.0-flash-lite";
 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_NAME}:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://injoque.dev", //
-  "Access-Control-Allow-Methods": "POST, OPTIONS", //
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey", //
+  "Access-Control-Allow-Origin": "https://injoque.dev",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
 
 serve(async (req: Request) => {
@@ -60,7 +57,7 @@ serve(async (req: Request) => {
       gameTheme
     } = body;
 
-    // --- Strengthened Payload Validation ---
+    // --- Payload Validation ---
     if (!currentGameState || typeof currentGameState !== 'object') {
         throw new Error("Invalid request: currentGameState is missing or not an object.");
     }
@@ -72,7 +69,7 @@ serve(async (req: Request) => {
         console.error("ERROR: Invalid currentGameState structure.", currentGameState);
         throw new Error("Invalid request: currentGameState has missing or invalid fields.");
     }
-    if (typeof playerCommand !== 'string') { // typeof undefined is 'undefined', so this catches missing too
+    if (typeof playerCommand !== 'string') {
         throw new Error("Invalid request: playerCommand is missing or not a string.");
     }
     if (!Array.isArray(turnHistory)) {
@@ -112,7 +109,6 @@ Rules:
 - Maintain thematic consistency with AI ethics and environmental sustainability.
 - Output ONLY the valid JSON object. No other text, no markdown, no apologies or explanations.
 `;
-//
 
     const requestBodyForGemini = {
       contents: [
@@ -124,14 +120,13 @@ Rules:
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 2048, 
-        // responseMimeType: "application/json", // Keep commented unless sure about model support
       },
        safetySettings: [ 
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      ] //
+      ]
     };
     console.log("DEBUG: Sending to Gemini API URL:", GEMINI_API_URL);
 
@@ -149,7 +144,6 @@ Rules:
     }
 
     const aiResult = await aiResponse.json();
-    // console.log("DEBUG: Raw Gemini Result:", JSON.stringify(aiResult, null, 2)); // Keep for debugging if needed
 
     let responseJsonText = "";
     if (aiResult.candidates && aiResult.candidates[0] && aiResult.candidates[0].content && aiResult.candidates[0].content.parts && aiResult.candidates[0].content.parts[0]) {
@@ -163,7 +157,7 @@ Rules:
       throw new Error("Unexpected response structure from Gemini API.");
     }
     
-    responseJsonText = responseJsonText.replace(/^```json\s*([\s\S]*?)\s*```$/g, "$1").trim(); //
+    responseJsonText = responseJsonText.replace(/^```json\s*([\s\S]*?)\s*```$/g, "$1").trim();
     console.log("DEBUG: Cleaned JSON text from Gemini:", responseJsonText);
 
     let parsedResponse;
@@ -182,12 +176,11 @@ Rules:
 
   } catch (error) {
     console.error("FATAL ERROR in function execution:", error.message, error.stack);
-    // Ensure the error message sent to the client is somewhat generic but useful
     const clientErrorMessage = error.message.startsWith("Invalid request:") || error.message.startsWith("AI response") 
                                ? error.message 
                                : "Failed to process AI request due to an internal error.";
-    return new Response(JSON.stringify({ error: clientErrorMessage, details: error.message }), { // Keep details for client-side logging if needed
-      status: error.message.startsWith("Invalid request:") ? 400 : 500, // Use 400 for bad client payload
+    return new Response(JSON.stringify({ error: clientErrorMessage, details: error.message }), {
+      status: error.message.startsWith("Invalid request:") ? 400 : 500, 
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }
