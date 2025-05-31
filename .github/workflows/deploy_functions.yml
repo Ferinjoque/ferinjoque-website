@@ -1,19 +1,17 @@
-# .github/workflows/deploy_functions.yml
 name: Deploy Supabase Edge Functions
 
 on:
   push:
     branches:
-      - main # Or your deployment branch
+      - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      # Use the secrets you created in GitHub
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }} # <-- Add this line
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,5 +22,4 @@ jobs:
           version: latest
 
       - name: Deploy Edge Functions
-        # Use the environment variable directly for the project ref
         run: supabase functions deploy --project-ref $SUPABASE_PROJECT_REF --import-map supabase/import_map.json
