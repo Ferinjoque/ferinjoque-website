@@ -5,19 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found | Fernando Injoque</title>
     <link rel="stylesheet" href="/assets/index.css"> <script src="https://cdn.tailwindcss.com"></script> <style>
-        /* Add the glitch effect CSS for the logo if desired */
-        /* You can copy the relevant .glitch CSS rules from your main styles.css */
-        /* Or simply omit the glitch effect on the 404 page */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-             /* Match your main site's dark background */
             background-color: #0c0c0c;
         }
-         /* Basic Glitch for Logo */
          .glitch {
              position: relative;
-             color: #eaeaea; /* --color-text */
+             color: #eaeaea;
              text-decoration: none;
              font-size: 1.75rem;
              font-weight: 700;
@@ -30,18 +25,18 @@
              left: 0;
              width: 100%;
              height: 100%;
-             background: #0c0c0c; /* --color-bg */
+             background: #0c0c0c;
              overflow: hidden;
-             clip-path: inset(50% 50% 50% 50%); /* Minimal initial clip */
+             clip-path: inset(50% 50% 50% 50%);
          }
          .glitch:hover::before {
              left: 2px;
-             text-shadow: -1px 0 #4CAF50; /* --color-primary */
+             text-shadow: -1px 0 #4CAF50;
              animation: glitch-anim-1 2s infinite linear alternate-reverse;
          }
           .glitch:hover::after {
              left: -2px;
-             text-shadow: 1px 0 #3F51B5; /* --color-accent */
+             text-shadow: 1px 0 #3F51B5;
              animation: glitch-anim-2 3s infinite linear alternate-reverse;
          }
 
@@ -82,4 +77,3 @@
 
     </body>
 </html>
-
