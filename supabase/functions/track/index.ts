@@ -1,12 +1,9 @@
-// supabase/functions/track/index.ts - FINAL VERSION with new fields
-
 console.log("DEBUG: index.ts starting (using Deno.serve)...");
 
 import { createClient } from "supabase";
 
 console.log("DEBUG: Imports successful.");
 
-// Read ENV vars
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -86,7 +83,7 @@ Deno.serve(async (req: Request) => {
 
     // --- Validate Payload ---
     const { event_type, event_data } = payload;
-    if (!event_type || typeof event_data !== 'object' || event_data === null) { // Added check for event_data object
+    if (!event_type || typeof event_data !== 'object' || event_data === null) {
       console.error("ERROR: Missing event_type or invalid/missing event_data in POST body.", payload);
       return new Response(JSON.stringify({ error: 'Missing event_type or invalid/missing event_data' }), {
         status: 400,
@@ -97,12 +94,11 @@ Deno.serve(async (req: Request) => {
 
     // --- Capture Server-Side Data ---
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || (req.conn?.remoteAddr as any)?.hostname || 'unknown';
-    const ua = req.headers.get('user-agent') || 'unknown'; // User Agent
+    const ua = req.headers.get('user-agent') || 'unknown';
     const sessionId = req.headers.get('x-session-id') || 'none';
     console.log(`DEBUG: Captured ip: ${ip}, ua: ${ua.substring(0,20)}..., session: ${sessionId}`);
 
     // --- Extract Frontend Data from event_data ---
-    // Use optional chaining and provide null default where appropriate
     const referrer = event_data?.referrer ?? null;
     const screen_width = event_data?.screen_width ?? null;
     const screen_height = event_data?.screen_height ?? null;
@@ -122,14 +118,11 @@ Deno.serve(async (req: Request) => {
     const { error: dbError } = await supabase
       .from('events')
       .insert({
-          // Core fields
           event_type: event_type,
-          payload:    event_data,      // Store the original full event_data payload
+          payload:    event_data,
           ip:         ip,
           session_id: sessionId,
-          user_agent: ua,              // Add user_agent back
-
-          // New fields extracted from payload or captured server-side
+          user_agent: ua,
           referrer: referrer,
           screen_width: screen_width,
           screen_height: screen_height,
@@ -168,6 +161,6 @@ Deno.serve(async (req: Request) => {
     headers: { "Allow": "POST, OPTIONS" },
   });
 
-}); // End Deno.serve
+});
 
 console.log("DEBUG: Deno server setup complete. Listening for requests...");
