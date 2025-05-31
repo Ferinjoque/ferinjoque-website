@@ -1,18 +1,15 @@
-// supabase/functions/weekly-report/index.ts
-
 console.log("DEBUG: weekly-report function starting...");
 
 import { createClient } from "supabase";
-import { serve } from "std/http/server.ts"; // Using import map via deno.json
+import { serve } from "std/http/server.ts";
 
 console.log("DEBUG: Imports successful using import map.");
 
-// --- Get Secrets ---
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const IPINFO_API_KEY = Deno.env.get('IPINFO_API_KEY'); // Optional
+const IPINFO_API_KEY = Deno.env.get('IPINFO_API_KEY');
 const WEEKLY_REPORT_FROM_EMAIL = Deno.env.get('WEEKLY_REPORT_FROM_EMAIL');
 const WEEKLY_REPORT_TO_EMAIL = Deno.env.get('WEEKLY_REPORT_TO_EMAIL');
 
@@ -46,7 +43,7 @@ serve(async (req: Request) => {
                 created_at, event_type, payload, ip, session_id, referrer,
                 utm_source, utm_medium, utm_campaign, user_agent,
                 browser_language, browser_timezone, screen_width, screen_height, pathname
-            `) // Added pathname
+            `)
             .gte('created_at', startTime)
             .lt('created_at', endTime);
 
@@ -54,17 +51,16 @@ serve(async (req: Request) => {
 
         if (!events || events.length === 0) {
             console.log("DEBUG: No events found for the last week.");
-            // Return simple success, maybe email "no data"?
             return new Response(JSON.stringify({ message: "No events to report" }), {
-                headers: { "Content-Type": "application/json" }, // Removed ...corsHeaders
+                headers: { "Content-Type": "application/json" },
                 status: 200
             });
         }
         console.log(`DEBUG: Fetched ${events.length} events.`);
 
-        // 3. (Optional) GeoIP enrichment
-        const geoDataCache = new Map<string, { country: string, region: string, city: string } | null>(); // Added type hint for map
-        let topCountries: [string, number][] = []; // Initialize outside the if block
+        // 3. GeoIP enrichment
+        const geoDataCache = new Map<string, { country: string, region: string, city: string } | null>();
+        let topCountries: [string, number][] = [];
 
         if (IPINFO_API_KEY) {
             const uniqueOriginalIpStrings = [...new Set(events.map((e) => e.ip).filter((ip) => typeof ip === 'string' && ip !== "unknown"))]; // Filter for strings explicitly
@@ -72,15 +68,12 @@ serve(async (req: Request) => {
             console.log(`DEBUG: Found ${uniqueOriginalIpStrings.length} unique IP strings for GeoIP lookup.`);
 
             for (const originalIpString of uniqueOriginalIpStrings) {
-                // --- START FIX for includes/split/trim ---
-                // We already filtered for strings, but double-checking adds safety
                 let firstIp = '';
                 if (typeof originalIpString === 'string') {
                     firstIp = originalIpString.includes(',')
                         ? originalIpString.split(',')[0].trim()
                         : originalIpString.trim();
                 }
-                // --- END FIX ---
 
                 // Skip if the extracted first IP is empty or invalid
                 if (!firstIp || firstIp === 'unknown') {
@@ -88,7 +81,7 @@ serve(async (req: Request) => {
                     continue;
                 }
 
-                // Check cache using the FIRST IP now
+                // Check cache using the FIRST IP
                 if (!geoDataCache.has(firstIp)) {
                     console.log(`DEBUG: Looking up GeoIP for first IP: ${firstIp} (from string: ${originalIpString})`);
                     try {
@@ -98,7 +91,7 @@ serve(async (req: Request) => {
                             const info = await res.json();
                             // Store result in cache using the FIRST IP as key
                             geoDataCache.set(firstIp, {
-                                country: info.country, // Assuming these fields exist
+                                country: info.country,
                                 region: info.region,
                                 city: info.city
                             });
@@ -118,12 +111,10 @@ serve(async (req: Request) => {
 
              // --- Aggregate Top Countries from Cache (INSIDE the 'if' block) ---
              const countryCounts = events.reduce((acc, e) => {
-                 // --- START FIX for includes/split/trim in reduce ---
                  const currentOriginalIp = typeof e.ip === 'string' ? e.ip : '';
                  const currentFirstIp = currentOriginalIp.includes(',')
                      ? currentOriginalIp.split(',')[0].trim()
                      : currentOriginalIp.trim();
-                 // --- END FIX ---
                  const geo = (currentFirstIp && currentFirstIp !== 'unknown') ? (geoDataCache.get(currentFirstIp) || null) : null;
 
                  if (geo?.country && typeof geo.country === 'string') { // Check if country is a string
@@ -133,7 +124,7 @@ serve(async (req: Request) => {
              }, {} as { [key: string]: number }); // Add type hint to accumulator
 
              topCountries = Object.entries(countryCounts)
-                 .sort(([, a], [, b]) => Number(b) - Number(a)) // Use Number() for safety
+                 .sort(([, a], [, b]) => Number(b) - Number(a))
                  .slice(0, 5);
              // --- End Aggregation ---
 
@@ -228,13 +219,13 @@ serve(async (req: Request) => {
                     "Authorization": `Bearer ${OPENAI_API_KEY}`,
                 },
                 body: JSON.stringify({
-                    model: "gpt-3.5-turbo", // Consider gpt-4o or gpt-4-turbo if budget allows for better insights
+                    model: "gpt-3.5-turbo",
                     messages: [
                         { role: "system", content: "You are a concise web analytics assistant summarizing weekly data for a personal portfolio website (injoque.dev)." },
                         { role: "user", content: `Analyze the following website analytics summary for the week ending ${endDate.toLocaleDateString()}. Identify the top 1-2 traffic sources (referrers/UTMs), the most engaging content (pages), and 1-2 other key observations (e.g., user demographics, notable changes if identifiable, potential issues). Be brief and use bullet points:\n\n${dataSummary}` }
                     ],
-                    max_tokens: 200, // Increased slightly for potentially richer summary
-                    temperature: 0.6, // Slightly higher for a bit more variability
+                    max_tokens: 200,
+                    temperature: 0.6,
                 }),
             });
              if (!openAIResponse.ok) {
@@ -280,8 +271,8 @@ serve(async (req: Request) => {
                 "Authorization": `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: WEEKLY_REPORT_FROM_EMAIL,  // Using ENV variable
-                to: [WEEKLY_REPORT_TO_EMAIL],    // Using ENV variable (Resend expects an array for 'to')
+                from: WEEKLY_REPORT_FROM_EMAIL,
+                to: [WEEKLY_REPORT_TO_EMAIL],
                 subject: emailSubject,
                 html: emailHtmlBody,
             }),
@@ -296,16 +287,16 @@ serve(async (req: Request) => {
         // 7. Return success
         return new Response(JSON.stringify({ success: true, message: "Weekly report generated and sent." }), {
             status: 200,
-            headers: { "Content-Type": "application/json" }, // Removed ...corsHeaders
+            headers: { "Content-Type": "application/json" },
         });
 
     } catch (error) {
         console.error("ERROR: An error occurred in the weekly report function:", error);
         return new Response(JSON.stringify({ success: false, error: error.message }), {
             status: 500,
-            headers: { "Content-Type": "application/json" }, // Removed ...corsHeaders
+            headers: { "Content-Type": "application/json" },
         });
     }
-}); // End Deno.serve
+});
 
 console.log("DEBUG: Weekly report function setup complete.");
