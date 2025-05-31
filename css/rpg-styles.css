@@ -1,11 +1,9 @@
-/* public/css/rpg-styles.css */
-
 /* Inherit variables from main styles.css for consistency */
 :root {
     --rpg-bg: var(--color-bg-alt, #111111);
     --rpg-text-color: var(--color-text, #eaeaea);
     --rpg-primary-color: var(--color-primary, #4CAF50);
-    --rpg-accent-color: var(--color-accent, #3F51B5); /* Azul para palabras clave y mensajes */
+    --rpg-accent-color: var(--color-accent, #3F51B5);
     --rpg-input-bg: rgba(0, 0, 0, 0.2);
     --rpg-panel-bg: rgba(20, 20, 20, 0.7);
     --rpg-border-color: rgba(255, 255, 255, 0.1);
@@ -97,31 +95,15 @@ body.rpg-body {
     margin-bottom: 1em !important;
 }
 
-/* Estilo para Palabras Clave Comandables en el texto de la historia */
 .commandable-keyword {
-    color: var(--rpg-accent-color); /* Azul distintivo */
-    font-weight: 600; /* Un poco más de énfasis */
-    /* text-decoration: underline; */ /* Opcional: subrayado */
-    /* cursor: help; */ /* Opcional: cambia el cursor al pasar por encima */
+    color: var(--rpg-accent-color);
+    font-weight: 600;
+    /* cursor: help; */
 }
 
-
-/* Panel de opciones (botones) - Ya no se usa para lista de botones fijos */
 .choices-panel {
-    margin-top: 1rem; /* Mantenemos un margen por si se usa para algo más adelante */
-    /* min-height: 30px; */ /* Ya no es tan necesario si no hay botones por defecto */
-    /* Los estilos de display:flex, opacity, transition, etc., se eliminan o comentan */
-    /* ya que los botones fijos se han ido. */
+    margin-top: 1rem;
 }
-
-/* .choice-button y .choice-button.choice-visible ya no son necesarios */
-/* para la animación escalonada de una lista de botones. */
-/* Si decides tener algún botón ocasional, puedes redefinir su estilo aquí. */
-/*
-.choice-button { ... }
-.choice-button.choice-visible { ... }
-*/
-
 
 .input-panel {
     display: flex;
@@ -161,7 +143,7 @@ body.rpg-body {
     color: var(--color-text-muted);
     font-size: 0.875rem;
     box-shadow: var(--shadow);
-    align-items: flex-start; /* Alinea los items al inicio si se envuelven */
+    align-items: flex-start;
 }
 
 .status-item {
@@ -264,29 +246,28 @@ body.rpg-body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Estilos para el Modal de Ayuda */
 .modal-overlay {
-    display: none; /* Oculto por defecto, JS lo mostrará */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); /* Fondo semitransparente más oscuro */
+    background-color: rgba(0, 0, 0, 0.7);
     z-index: 200;
     justify-content: center;
     align-items: center;
     padding: 20px;
-    backdrop-filter: blur(3px); /* Sutil blur para el fondo */
+    backdrop-filter: blur(3px);
 }
 
 .modal-content {
-    background-color: var(--rpg-bg); /* Un poco más oscuro que bg-alt para contraste */
+    background-color: var(--rpg-bg);
     padding: 25px 30px;
     border-radius: var(--border-radius);
     border: 1px solid var(--rpg-border-color);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* Sombra más pronunciada */
-    max-width: 650px; /* Un poco más ancho para la ayuda */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    max-width: 650px;
     width: 90%;
     max-height: 85vh;
     overflow-y: auto;
@@ -297,23 +278,23 @@ body.rpg-body {
 .modal-content h3 {
     color: var(--rpg-primary-color);
     margin-top: 0;
-    margin-bottom: 1.2rem; /* Más espacio */
+    margin-bottom: 1.2rem;
     border-bottom: 1px solid var(--rpg-border-color);
-    padding-bottom: 0.75rem; /* Más padding */
-    font-size: 1.5rem; /* Título de ayuda más grande */
+    padding-bottom: 0.75rem;
+    font-size: 1.5rem;
 }
 
 .modal-content ul {
-    list-style: none; /* Puedes cambiar a 'disc' o 'circle' si prefieres */
-    padding-left: 0; /* O '1.2em' si usas list-style disc */
+    list-style: none;
+    padding-left: 0;
     margin-bottom: 1rem;
 }
 
 .modal-content li {
-    margin-bottom: 0.6rem; /* Un poco más de espacio entre ítems de lista */
+    margin-bottom: 0.6rem;
     line-height: 1.6;
 }
-.modal-content li::before { /* Estilo de viñeta personalizado opcional */
+.modal-content li::before {
     /* content: '»';
     color: var(--rpg-primary-color);
     margin-right: 0.5em; */
@@ -333,12 +314,12 @@ body.rpg-body {
 
 .close-button {
     position: absolute;
-    top: 15px; /* Ajustado */
-    right: 20px; /* Ajustado */
+    top: 15px;
+    right: 20px;
     background: none;
     border: none;
-    font-size: 2.2rem; /* Ligeramente más grande */
-    font-weight: 300; /* Más fino */
+    font-size: 2.2rem;
+    font-weight: 300;
     color: var(--color-text-muted);
     cursor: pointer;
     line-height: 1;
@@ -346,7 +327,7 @@ body.rpg-body {
     transition: color 0.2s ease;
 }
 .close-button:hover {
-    color: var(--rpg-primary-color); /* Cambia a color primario en hover */
+    color: var(--rpg-primary-color);
 }
 
 
@@ -360,7 +341,6 @@ body.rpg-body {
     .modal-content h3 { font-size: 1.3rem; }
 }
 
-/* Added for AI-Driven RPG */
 .loading-indicator {
     text-align: center;
     padding: 1rem;
@@ -371,7 +351,7 @@ body.rpg-body {
     align-items: center;
     gap: 0.5rem;
 }
-.loading-indicator p { /* Style for the text inside loading-indicator if you add one */
+.loading-indicator p {
     margin-bottom: 0.5rem;
 }
 
@@ -394,8 +374,8 @@ body.rpg-body {
     gap: 0.75rem;
     justify-content: center;
     margin-top: 1rem;
-    margin-bottom: 1rem; /* Added margin */
-    min-height: auto; /* Adjusted from fixed height */
+    margin-bottom: 1rem;
+    min-height: auto;
 }
 
 .ai-choice-button {
@@ -416,7 +396,6 @@ body.rpg-body {
     color: white;
 }
 
-/* Ensure body takes full height for sticky footer */
 body.rpg-body {
     display: flex;
     flex-direction: column;
@@ -424,26 +403,22 @@ body.rpg-body {
 }
 
 .rpg-main {
-    flex-grow: 1; /* Allows main content to fill space */
+    flex-grow: 1;
 }
 
-/* Ensure story output panel is scrollable */
 .story-output-panel {
-    /* max-height: 60vh; /* Or your preferred max height */
-    /* overflow-y: auto; /* Already present */
+    /* max-height: 60vh; /*
     flex-grow: 1; /* Allow it to take available space if others shrink */
-    display: flex; /* Added to make p fill width */
-    flex-direction: column; /* Added */
+    display: flex;
+    flex-direction: column;
 }
 .story-output-panel p.story-text-line {
     margin-bottom: 0.8em !important; 
     line-height: 1.6;
-    /* Ensure paragraphs can take up full width for better readability if they were constrained */
-    /* width: 100%;  -- Might not be needed if parent flex properties are correct */
 }
 
-.error-message { /* New class for error messages */
-    color: #F44336; /* A distinct error color (e.g., red) */
+.error-message {
+    color: #F44336;
     font-style: italic;
     font-weight: bold;
     font-size: 0.95em;
@@ -457,8 +432,8 @@ body.rpg-body {
 .processing-indicator-text {
     color: var(--rpg-accent-color, #3F51B5);
     font-style: italic;
-    text-align: center; /* Or align with spinner if spinner is also text-aligned */
-    margin-bottom: 0.5rem !important; /* Space before spinner */
+    text-align: center;
+    margin-bottom: 0.5rem !important;
 }
 
 .auth-container {
@@ -466,7 +441,7 @@ body.rpg-body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - 150px); /* Adjust based on header/footer height */
+    min-height: calc(100vh - 150px);
     padding-top: 1rem;
     padding-bottom: 2rem;
 }
@@ -537,7 +512,7 @@ body.rpg-body {
     border: 1px solid var(--rpg-border-color);
     border-radius: var(--border-radius);
     color: var(--rpg-text-color);
-    font-family: var(--font-sans); /* Use sans-serif for auth forms */
+    font-family: var(--font-sans);
     font-size: 0.95em;
     transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -570,7 +545,7 @@ body.rpg-body {
 .auth-message {
     margin-top: 0.8rem;
     font-size: 0.85em;
-    min-height: 1.2em; /* Reserve space to prevent layout shifts */
+    min-height: 1.2em;
 }
 
 .auth-message.success {
@@ -578,7 +553,7 @@ body.rpg-body {
 }
 
 .auth-message.error {
-    color: #F44336; /* Red for errors */
+    color: #F44336;
 }
 
 .auth-toggle {
@@ -596,14 +571,13 @@ body.rpg-body {
     color: var(--color-primary-light);
 }
 
-/* Style for the static processing text inside the spinner area if kept in HTML */
 .processing-indicator-text-static {
     color: var(--rpg-accent-color, #3F51B5);
     font-style: italic;
     margin-bottom: 0.5rem;
 }
 
-.micro-button { /* For small buttons like logout */
+.micro-button {
     padding: 3px 8px !important;
     font-size: 0.8em !important;
     line-height: 1.2 !important;
