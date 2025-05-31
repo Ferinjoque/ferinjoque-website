@@ -1,5 +1,5 @@
 import { serve } from "std/http/server.ts";
-import { createClient, SupabaseClient } from "supabase"; // Added SupabaseClient type
+import { createClient, SupabaseClient } from "supabase";
 
 console.log("DEBUG: complete-email-verification function starting...");
 
@@ -51,7 +51,6 @@ serve(async (req: Request) => {
 
     if (new Date(verificationRecord.expires_at) < new Date()) {
       console.warn("Expired token used:", token);
-      // Optionally delete expired token
       await supabaseAdmin.from("email_verifications").delete().eq("id", verificationRecord.id);
       return new Response(JSON.stringify({ error: "Verification token has expired." }), {
         status: 400,
@@ -62,7 +61,7 @@ serve(async (req: Request) => {
     // Mark user's email as confirmed in auth.users
     const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(
       verificationRecord.user_id,
-      { email_confirm: true } // Supabase uses email_confirm: true
+      { email_confirm: true }
     );
 
     if (updateUserError) {
