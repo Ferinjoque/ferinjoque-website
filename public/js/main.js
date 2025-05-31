@@ -17,12 +17,11 @@ let sectionObserver = null;
 
 /**
  * Dynamically loads the reCAPTCHA script when the contact section is visible.
- * This is for security and considered "Necessary".
+ * Considered "Necessary".
  */
 const loadRecaptchaScript = (entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting && !recaptchaLoaded) {
-            console.log("DEBUG: Contact section visible, loading reCAPTCHA...");
             recaptchaLoaded = true;
             const script = document.createElement('script');
             script.src = 'https://www.google.com/recaptcha/api.js?render=6LcHbh4rAAAAABRo54A4WU8pdJyO2E-5GBBBGE3v';
@@ -49,10 +48,8 @@ if (contactSection) {
  */
 function initializeAnalytics() {
     if (customAnalyticsInitialized) {
-        console.log('DEBUG: Custom analytics already initialized.');
         return;
     }
-    console.log('DEBUG: Analytics consent granted. Initializing custom trackers...');
 
     // Helper function to parse UTM parameters
     function getUtmParams() {
@@ -87,7 +84,6 @@ function initializeAnalytics() {
             utm_term: utmData.utm_term,
             utm_content: utmData.utm_content,
         };
-        console.log("DEBUG: Tracking page_view with data:", pageViewData);
         trackEvent('page_view', pageViewData);
     };
 
@@ -99,11 +95,9 @@ function initializeAnalytics() {
 
     // 2) Track section impressions via IntersectionObserver
     if (navSections.length > 0 && !sectionObserver) {
-        console.log("DEBUG: Initializing IntersectionObserver for section views.");
         sectionObserver = new IntersectionObserver((entries, observerInstance) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && customAnalyticsInitialized) {
-                    console.log("DEBUG: Tracking section_view:", entry.target.id);
                     trackEvent('section_view', {
                         section: entry.target.id,
                         timestamp: Date.now(),
@@ -115,15 +109,12 @@ function initializeAnalytics() {
 
         navSections.forEach(sec => sectionObserver.observe(sec));
     } else if (navSections.length > 0 && sectionObserver) {
-        console.log("DEBUG: Re-observing sections with existing IntersectionObserver.");
         navSections.forEach(sec => sectionObserver.observe(sec));
     }
 
     // 3) Track clicks on all links & buttons
-    // Ensure this listener is only added once by initializeAnalytics
-    // If initializeAnalytics is guarded by customAnalyticsInitialized, this is fine.
     document.addEventListener('click', (e) => {
-        if (!customAnalyticsInitialized) return; // Extra guard if needed
+        if (!customAnalyticsInitialized) return;
         const el = e.target.closest('a, button');
         if (!el) return;
         const clickData = {
@@ -132,23 +123,18 @@ function initializeAnalytics() {
             href: el.href || null,
             timestamp: Date.now(),
         };
-        console.log("DEBUG: Tracking click:", clickData);
         trackEvent('click', clickData);
     });
 
     // 4) Track hovers on any element with data-track-hover attribute
     document.querySelectorAll('[data-track-hover]').forEach(el => {
-        // Ensure this listener is only added once
-        // A simple way is to add a marker attribute to the element after adding the listener,
-        // or ensure initializeAnalytics is only called once.
-        if (!el.dataset.hoverListenerAdded) { // Example marker
+        if (!el.dataset.hoverListenerAdded) {
             el.addEventListener('mouseenter', () => {
-                if (!customAnalyticsInitialized) return; // Extra guard
+                if (!customAnalyticsInitialized) return;
                 const hoverData = {
                     element: el.dataset.trackHover,
                     timestamp: Date.now(),
                 };
-                console.log("DEBUG: Tracking hover:", hoverData);
                 trackEvent('hover', hoverData);
             });
             el.dataset.hoverListenerAdded = 'true';
@@ -156,7 +142,6 @@ function initializeAnalytics() {
     });
 
     customAnalyticsInitialized = true;
-    console.log('DEBUG: Custom analytics services are now active.');
 }
 
 /**
@@ -164,26 +149,15 @@ function initializeAnalytics() {
  */
 function disableAnalytics() {
     if (!customAnalyticsInitialized && !sectionObserver) {
-        console.log('DEBUG: Analytics not initialized or already disabled.');
         return;
     }
-    console.log('DEBUG: Analytics consent revoked/missing. Disabling analytics...');
-    // For this project, the main impact is stopping new data collection.
-    // If you had complex listeners added to document/window that need specific removal,
-    // you'd do that here. For instance, the click listener:
-    // document.removeEventListener('click', yourStoredClickHandler);
-    // However, since the listeners check 'customAnalyticsInitialized', they will mostly self-disable.
-    // The hover listeners are on specific elements and would need more complex removal if required.
-    // For simplicity, we'll rely on customAnalyticsInitialized flag to gate execution.
 
     if (sectionObserver) {
-        console.log("DEBUG: Disconnecting IntersectionObserver for section views.");
         sectionObserver.disconnect();
-        // sectionObserver = null; // Set to null so it can be re-created if consent is re-granted
+        sectionObserver = null;
     }
 
-    customAnalyticsInitialized = false; // This is the primary gate
-    console.log('DEBUG: Custom analytics services are now inactive.');
+    customAnalyticsInitialized = false;
 }
 
 // --- CookieYes Integration Logic  ---
@@ -196,15 +170,9 @@ function handleCookieYesConsent(consentDetail) {
     let analyticsConsentGiven = false;
 
     if (consentDetail && consentDetail.categories && typeof consentDetail.categories.analytics === 'boolean') {
-        // From getCkyConsent() or cookieyes_banner_load
         analyticsConsentGiven = consentDetail.categories.analytics;
-        console.log('DEBUG: Consent status from categories.analytics:', analyticsConsentGiven);
     } else if (consentDetail && consentDetail.accepted && Array.isArray(consentDetail.accepted)) {
-        // From cookieyes_consent_update
         analyticsConsentGiven = consentDetail.accepted.includes('analytics');
-        console.log('DEBUG: Consent status from accepted.includes("analytics"):', analyticsConsentGiven);
-    } else {
-        console.warn('DEBUG: Could not determine analytics consent from CookieYes data:', consentDetail);
     }
 
     if (analyticsConsentGiven) {
@@ -217,7 +185,6 @@ function handleCookieYesConsent(consentDetail) {
 // 1. Listen for CookieYes banner load (initial consent state)
 // This event fires when the banner is ready and initial consent is known.
 document.addEventListener('cookieyes_banner_load', function(event) {
-    console.log('DEBUG: CookieYes banner_load event. Detail:', event.detail);
     if (event.detail) {
         handleCookieYesConsent(event.detail);
     }
@@ -225,33 +192,29 @@ document.addEventListener('cookieyes_banner_load', function(event) {
 
 // 2. Listen for consent updates
 // This event fires when the user changes their consent settings.
-// !!! IMPORTANT: Verify the exact event name from CookieYes documentation.
-// 'cookieyes_consent_update' is common.
 document.addEventListener('cookieyes_consent_update', function(event) {
-    console.log('DEBUG: CookieYes consent_update event. Detail:', event.detail);
     if (event.detail) {
         handleCookieYesConsent(event.detail);
     }
 });
 
 // 3. Fallback/Initial check using getCkyConsent() after DOM is ready
-// This is a safety net in case the events are missed or if we need to check before they fire.
+// This is a safety net in case the events are missed or if need to check before they fire.
 window.addEventListener('DOMContentLoaded', () => {
-    console.log("DEBUG: DOMContentLoaded. Initializing non-analytics UI elements.");
 
     // Scroll-triggered animations for project cards, timeline items, and skill categories
     const animatedElements = document.querySelectorAll('.project-card, .timeline-item, .skill-category');
     if (animatedElements.length > 0) {
         const animationObserverOptions = {
             threshold: 0.1, // Trigger when 10% of the element is visible
-            // rootMargin: '0px 0px -50px 0px' // Optional: Adjust if elements are animating too early/late
+            // rootMargin: '0px 0px -50px 0px' // To later adjust if elements are animating too early/late
         };
 
         const animationCallback = (entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('fadeIn');
-                    observer.unobserve(entry.target); // Stop observing after animation
+                    observer.unobserve(entry.target);
                 }
             });
         };
@@ -268,21 +231,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
     setTimeout(() => {
         if (typeof window.getCkyConsent === 'function') {
-            console.log('DEBUG: DOMContentLoaded - Fallback: Checking consent via getCkyConsent().');
             const consentData = window.getCkyConsent();
             if (consentData) {
                 // Check if analytics is already initialized by an event
                 if (!customAnalyticsInitialized) {
                     handleCookieYesConsent(consentData);
-                } else {
-                    console.log('DEBUG: Fallback - Analytics already initialized by event, no action needed from getCkyConsent.');
                 }
             } else {
-                console.log('DEBUG: DOMContentLoaded - Fallback: getCkyConsent() returned no data.');
                 if (!customAnalyticsInitialized) disableAnalytics(); // Ensure disabled if no data
             }
         } else {
-            console.log('DEBUG: DOMContentLoaded - Fallback: window.getCkyConsent not available yet.');
             if (!customAnalyticsInitialized) disableAnalytics(); // Ensure disabled if API not ready
         }
     }, 500);
@@ -294,7 +252,6 @@ let sustainabilityAnimationStarted = false; // Flag to ensure animation only sta
 function startSustainabilityAnimation() {
     if (sustainabilityAnimationStarted) return; // Don't start if already started
     sustainabilityAnimationStarted = true;
-    console.log("DEBUG: About section visible, starting sustainability animation...");
 
     const canvas = document.getElementById('sustainabilityAnimationCanvas');
     if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
@@ -314,8 +271,8 @@ function startSustainabilityAnimation() {
     function resizeCanvas() {
         const parent = canvas.parentElement;
         if (parent) {
-            const newWidth = Math.min(parent.clientWidth, 450); // Max width
-            currentWidth = newWidth > 0 ? newWidth : 300; // Ensure non-zero
+            const newWidth = Math.min(parent.clientWidth, 450);
+            currentWidth = newWidth > 0 ? newWidth : 300;
             currentHeight = currentWidth * 1.3;
 
             const dpr = window.devicePixelRatio || 1;
@@ -326,10 +283,7 @@ function startSustainabilityAnimation() {
             ctx.scale(dpr, dpr);
         }
     }
-    resizeCanvas(); // Initial resize to set dimensions even before animation starts
-    // Optional: Consider adding a window resize listener if the parent's size can change
-    // window.addEventListener('resize', resizeCanvas);
-
+    resizeCanvas();
 
     // Animation variables (Plexus Lightbulb v2)
     const bulbColor = '#3F51B5';
@@ -519,11 +473,9 @@ function startSustainabilityAnimation() {
     defineBulbPoints();
     defineRecycleSymbolPoints();
     createPlexusLines(bulbPoints, bulbLines, 0.35);
-    // recycleSymbolLines are defined in defineRecycleSymbolPoints
 
-    render(); // Start the animation loop
+    render();
 
-    // Cleanup function (not strictly needed if observer unobserves, but good practice)
     return () => {
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -534,7 +486,7 @@ function startSustainabilityAnimation() {
 
 
 // --- START: IntersectionObserver for About Section Animation ---
-const aboutSectionForAnimation = document.getElementById('about'); // Target the #about section
+const aboutSectionForAnimation = document.getElementById('about');
 
 if (aboutSectionForAnimation) {
     const animationObserverOptions = {
@@ -546,15 +498,13 @@ if (aboutSectionForAnimation) {
         entries.forEach(entry => {
             if (entry.isIntersecting && !sustainabilityAnimationStarted) {
                 startSustainabilityAnimation();
-                observer.unobserve(aboutSectionForAnimation); // Stop observing once started
+                observer.unobserve(aboutSectionForAnimation);
             }
         });
     };
 
     const animationObserver = new IntersectionObserver(animationObserverCallback, animationObserverOptions);
     animationObserver.observe(aboutSectionForAnimation);
-} else {
-    console.warn("DEBUG: About section for animation trigger not found.");
 }
 // --- END: IntersectionObserver for About Section Animation ---
 
@@ -566,7 +516,6 @@ window.addEventListener('scroll', () => {
         header.classList.remove('scrolled');
     }
     highlightActiveSection();
-    // animateOnScroll(); // Removed: Replaced by IntersectionObserver
 });
 
 // Mobile menu toggle
@@ -618,13 +567,11 @@ function highlightActiveSection() {
     });
 }
 
-// Removed: animateOnScroll() function. Its functionality is now handled by an IntersectionObserver
-// defined within the DOMContentLoaded event listener.
 
 // --- START: Contact Form Logic with Cooldown ---
-let isFormSubmitting = false; // Flag for cooldown
+let isFormSubmitting = false;
 const COOLDOWN_PERIOD_MS = 120000; // 2m cooldown
-let cooldownTimerInterval = null; // Variable to hold the interval ID for the countdown
+let cooldownTimerInterval = null;
 
 if (contactForm) {
     const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -722,7 +669,7 @@ if (contactForm) {
                                     submitButton.textContent = originalButtonText;
                                 }
                             }, 1000);
-                        } else { // Fallback if button not found, just use timeout
+                        } else {
                              setTimeout(() => {
                                 isFormSubmitting = false;
                              }, COOLDOWN_PERIOD_MS);
