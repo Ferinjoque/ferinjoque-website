@@ -17,7 +17,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY || !WEEKLY_RE
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://injoque.dev", // Or be more specific, e.g., your frontend URL
+  "Access-Control-Allow-Origin": "https://injoque.dev",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
@@ -37,10 +37,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const token = crypto.randomUUID(); // Simple UUID token
+    const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Token valid for 24 hours
 
-    // Store the token in the database
     const { error: dbError } = await supabaseAdmin
       .from("email_verifications")
       .insert({
@@ -65,7 +64,7 @@ serve(async (req: Request) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: WEEKLY_REPORT_FROM_EMAIL, // Use the configured "from" email
+        from: WEEKLY_REPORT_FROM_EMAIL,
         to: [email],
         subject: "Confirm Your Email for Eco-Echoes RPG",
         html: `
