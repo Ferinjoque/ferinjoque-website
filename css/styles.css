@@ -407,31 +407,43 @@ nav {
 }
 
 /*
- * Static Layered Text Effect for RPG Nav Link
+ * Static Layered Text Effect for RPG Nav Link (Blue text with White Outline)
  */
 .nav-links a.nav-rpg-text-effect {
     color: var(--color-accent);
     font-weight: 500;
     text-decoration: none;
     position: relative;
-    padding: 2px 0;
-
+   
     text-shadow:
-        1px 1px 0px var(--color-primary),
-        -1px -1px 0px var(--color-text);
+        /* 8-point outline for a solid 1px border */
+        -1px -1px 0 #fff,   /* Top-left */
+         0   -1px 0 #fff,   /* Top */
+         1px -1px 0 #fff,   /* Top-right */
+        -1px  0   0 #fff,   /* Left */
+         1px  0   0 #fff,   /* Right */
+        -1px  1px 0 #fff,   /* Bottom-left */
+         0    1px 0 #fff,   /* Bottom */
+         1px  1px 0 #fff;   /* Bottom-right */
 
-    transition: text-shadow 0.3s ease, color 0.3s ease;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .nav-links a.nav-rpg-text-effect:hover {
-    color: #5c6bc0;
+    color: #5262b6;
     text-shadow:
-        1.5px 1.5px 0px var(--color-primary-light),
-        -1.5px -1.5px 0px #ffffff;
+        -1px -1px 0 #f0f0f0,   /* Top-left */
+         0   -1px 0 #f0f0f0,   /* Top */
+         1px -1px 0 #f0f0f0,   /* Top-right */
+        -1px  0   0 #f0f0f0,   /* Left */
+         1px  0   0 #f0f0f0,   /* Right */
+        -1px  1px 0 #f0f0f0,   /* Bottom-left */
+         0    1px 0 #f0f0f0,   /* Bottom */
+         1px  1px 0 #f0f0f0;   /* Bottom-right - using a slightly off-white for hover */
 }
 
 .nav-links a.nav-rpg-text-effect::after {
-    content: none !important;
+    content: none !important;]
 }
 
 @keyframes glitch-anim-1 {
