@@ -406,39 +406,32 @@ nav {
     animation: glitch-anim-2 10s infinite linear alternate-reverse;
 }
 
-/* Custom Glitch Effect for RPG Nav Link */
-.glitch-effect-rpg {
-    position: relative;
-    display: inline-block;
-    color: var(--color-text);
-    text-decoration: none;
+/*
+ * Static Layered Text Effect for RPG Nav Link
+ */
+.nav-links a.nav-rpg-text-effect {
+    color: var(--color-accent);
     font-weight: 500;
+    text-decoration: none;
+    position: relative;
+    padding: 2px 0;
+
+    text-shadow:
+        1px 1px 0px var(--color-primary),
+        -1px -1px 0px var(--color-text);
+
+    transition: text-shadow 0.3s ease, color 0.3s ease;
 }
 
-.glitch-effect-rpg::before,
-.glitch-effect-rpg::after {
-    content: attr(data-text);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--color-bg);
-    overflow: hidden;
+.nav-links a.nav-rpg-text-effect:hover {
+    color: #5c6bc0;
+    text-shadow:
+        1.5px 1.5px 0px var(--color-primary-light),
+        -1.5px -1.5px 0px #ffffff;
 }
 
-.glitch-effect-rpg::before {
-    left: 2px;
-    text-shadow: -2px 0 var(--color-accent);
-    clip: rect(44px, 9999px, 56px, 0);
-    animation: glitch-title-1 8s infinite linear alternate-reverse;
-}
-
-.glitch-effect-rpg::after {
-    left: -2px;
-    text-shadow: 2px 0 var(--color-accent);
-    clip: rect(44px, 9999px, 56px, 0);
-    animation: glitch-title-2 8s infinite linear alternate-reverse;
+.nav-links a.nav-rpg-text-effect::after {
+    content: none !important;
 }
 
 @keyframes glitch-anim-1 {
