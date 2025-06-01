@@ -443,7 +443,7 @@ nav {
 }
 
 .nav-links a.nav-rpg-text-effect::after {
-    content: none !important;]
+    content: none !important;
 }
 
 @keyframes glitch-anim-1 {
