@@ -19,7 +19,7 @@
 
     <header class="rpg-header">
         <div class="container">
-            <nav>
+           <nav>
                 <div class="logo">
                     <a href="/" class="glitch" data-text="FI" title="Back to Main Portfolio">FI</a>
                 </div>
@@ -27,12 +27,13 @@
                     <h1 class="game-title">Eco-Echoes</h1>
                     <span class="game-subtitle">An AI Chronicle</span>
                 </div>
-                <div id="user-status-area" style="display: none; color: var(--rpg-text-color); font-size: 0.9em; margin-right: 1rem;">
-                    Logged in as: <span id="user-email-display"></span>
-                    <button id="logout-button" class="cta-button micro-button" style="margin-left: 10px; padding: 3px 8px; font-size: 0.8em;">Logout</button>
-                </div>
-                <div class="theme-toggle icon-button" title="Toggle Theme (Eco Mode)">
-                    <span class="material-icons theme-icon">eco</span>
+                <div class="user-controls-wrapper" style="display: flex; align-items: center;"> <div id="user-status-area" style="color: var(--rpg-text-color); font-size: 0.9em;">
+                        Logged in as: <span id="user-email-display"></span>
+                        <button id="logout-button" class="cta-button micro-button" style="margin-left: 10px;">Logout</button>
+                    </div>
+                    <div class="theme-toggle icon-button" title="Toggle Theme (Eco Mode)" style="margin-left: 1rem;">
+                        <span class="material-icons theme-icon">eco</span>
+                    </div>
                 </div>
             </nav>
         </div>
