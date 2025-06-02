@@ -1,10 +1,8 @@
-// public/js/rpg.js - Phase 1 & Phase 2 (Auth) Improvements - CORRECTED & Integrated with Custom Email Verification
-
 // --- Constants ---
 const TYPING_SPEED = 5; // Faster for AI output
 const MAX_HISTORY_TURNS = 5; // Number of recent player/AI turns to send as context
 const COMMAND_HISTORY_MAX = 20; // Max number of commands to keep in history
-const SUPABASE_FUNCTION_URL = `https://sueybbrfwiqviollreiu.supabase.co/functions/v1/rpg-ai-engine/`; //
+const SUPABASE_FUNCTION_URL = `https://sueybbrfwiqviollreiu.supabase.co/functions/v1/rpg-ai-engine/`;
 
 const commandAliases = {
     "l": "look around",
@@ -13,36 +11,36 @@ const commandAliases = {
     "h": "help",
     "?": "help",
     "q": "quit"
-}; //
+};
 
 // --- DOM Elements ---
-const storyOutput = document.getElementById('story-output'); //
-const playerInput = document.getElementById('player-input'); //
-const submitCommandButton = document.getElementById('submit-command'); //
-const playerNameDisplay = document.getElementById('player-name'); //
-const sectorStabilityDisplay = document.getElementById('sector-stability'); //
-const aiSyncDisplay = document.getElementById('ai-sync'); //
-const inventoryDisplay = document.getElementById('inventory-items'); //
-const helpModal = document.getElementById('help-modal'); //
-const helpContent = document.getElementById('help-modal-content'); //
-const closeHelpButton = document.getElementById('close-help-modal'); //
-const aiChoicesPanel = document.getElementById('ai-choices-panel'); //
-const aiLoadingIndicator = document.getElementById('ai-loading-indicator'); //
-let processingMessageElement = null; //
+const storyOutput = document.getElementById('story-output');
+const playerInput = document.getElementById('player-input');
+const submitCommandButton = document.getElementById('submit-command');
+const playerNameDisplay = document.getElementById('player-name');
+const sectorStabilityDisplay = document.getElementById('sector-stability');
+const aiSyncDisplay = document.getElementById('ai-sync');
+const inventoryDisplay = document.getElementById('inventory-items');
+const helpModal = document.getElementById('help-modal');
+const helpContent = document.getElementById('help-modal-content');
+const closeHelpButton = document.getElementById('close-help-modal');
+const aiChoicesPanel = document.getElementById('ai-choices-panel');
+const aiLoadingIndicator = document.getElementById('ai-loading-indicator');
+let processingMessageElement = null;
 
 // --- Auth UI DOM Elements ---
-const authUiContainer = document.getElementById('auth-ui-container'); //
-const gameUiContainer = document.getElementById('game-ui-container'); //
-const loginForm = document.getElementById('login-form'); //
-const registerForm = document.getElementById('register-form'); //
-const playGuestButton = document.getElementById('play-guest-button'); //
-const loginMessage = document.getElementById('login-message'); //
-const registerMessage = document.getElementById('register-message'); //
-const userStatusArea = document.getElementById('user-status-area'); //
-const userEmailDisplay = document.getElementById('user-email-display'); //
-const logoutButton = document.getElementById('logout-button'); //
-const showRegisterLink = document.getElementById('show-register-link'); //
-const showLoginLink = document.getElementById('show-login-link'); //
+const authUiContainer = document.getElementById('auth-ui-container');
+const gameUiContainer = document.getElementById('game-ui-container');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const playGuestButton = document.getElementById('play-guest-button');
+const loginMessage = document.getElementById('login-message');
+const registerMessage = document.getElementById('register-message');
+const userStatusArea = document.getElementById('user-status-area');
+const userEmailDisplay = document.getElementById('user-email-display');
+const logoutButton = document.getElementById('logout-button');
+const showRegisterLink = document.getElementById('show-register-link');
+const showLoginLink = document.getElementById('show-login-link');
 
 // --- Game State ---
 let gameState = {
@@ -53,107 +51,94 @@ let gameState = {
     currentLocationDescription: "at the GAIA Prime main console.",
     turnHistory: [],
     isAwaitingAI: false,
-    currentUser: null,    // Will store Supabase user object
-}; //
+    currentUser: null,
+};
 
 // --- Command History ---
-let commandHistory = []; //
-let historyIndex = -1; //
+let commandHistory = [];
+let historyIndex = -1;
 
 // --- Supabase Client Initialization ---
-const SUPABASE_PROJECT_URL = 'https://sueybbrfwiqviollreiu.supabase.co'; //
+const SUPABASE_PROJECT_URL = 'https://sueybbrfwiqviollreiu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXliYnJmd2lxdmlvbGxyZWl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMTc0ODIsImV4cCI6MjA2MTg5MzQ4Mn0.7_gmmA5Ra1b43BOQ83pr7SZ0lTGjaemYaebkYSm99pw'; //
-let supabase = null; //
+let supabase = null;
 
-if (SUPABASE_PROJECT_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') { //
-    console.error("CRITICAL: Supabase URL or Anon Key has not been updated from placeholder values. Please update rpg.js"); //
+try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabase = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY);
+    } else {
+        throw new Error("Supabase client library (supabase-js) not found. Ensure it's loaded before this script, typically via a CDN link in your HTML: <script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>"); //
+    }
+} catch (e) {
+    console.error("Error initializing Supabase client:", e);
     const body = document.querySelector('body');
     if (body && authUiContainer) {
-        authUiContainer.innerHTML = "<div class='auth-panel'><p class='auth-message error'>Eco-Echoes is currently unavailable due to a configuration error. Please update the Supabase credentials in the script.</p></div>"; //
-        authUiContainer.style.display = 'flex'; //
-        if(gameUiContainer) gameUiContainer.style.display = 'none'; //
+         authUiContainer.innerHTML = "<div class='auth-panel'><p class='auth-message error'>Critical error: Could not initialize application services. This might be due to an issue with the Supabase client library or invalid credentials. Check console for details.</p></div>"; //
+         authUiContainer.style.display = 'flex';
+         if(gameUiContainer) gameUiContainer.style.display = 'none';
     } else if (body) {
-        body.innerHTML = '<p style="color: white; text-align: center; padding: 50px; font-size: 1.2em;">Eco-Echoes is currently unavailable due to a configuration error. Please update the Supabase credentials in the script.</p>'; //
-    }
-} else {
-    try {
-        if (window.supabase && typeof window.supabase.createClient === 'function') { //
-            supabase = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY); //
-        } else {
-            throw new Error("Supabase client library (supabase-js) not found. Ensure it's loaded before this script, typically via a CDN link in your HTML: <script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>"); //
-        }
-    } catch (e) {
-        console.error("Error initializing Supabase client:", e); //
-        const body = document.querySelector('body');
-        if (body && authUiContainer) {
-             authUiContainer.innerHTML = "<div class='auth-panel'><p class='auth-message error'>Critical error: Could not initialize application services. This might be due to an issue with the Supabase client library or invalid credentials. Check console for details.</p></div>"; //
-             authUiContainer.style.display = 'flex'; //
-             if(gameUiContainer) gameUiContainer.style.display = 'none'; //
-        } else if (body) {
-            body.innerHTML = '<p style="color: white; text-align: center; padding: 50px; font-size: 1.2em;">Critical error: Could not initialize application services. Check console for details.</p>'; //
-        }
+        body.innerHTML = '<p style="color: white; text-align: center; padding: 50px; font-size: 1.2em;">Critical error: Could not initialize application services. Check console for details.</p>'; //
     }
 }
 
 
 // --- Core Game Functions ---
-
-function escapeHtml(unsafe) { //
-    if (typeof unsafe !== 'string') return ''; //
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return '';
     return unsafe
-         .replace(/&/g, "&amp;") //
-         .replace(/</g, "&lt;") //
-         .replace(/>/g, "&gt;") //
-         .replace(/"/g, "&quot;") //
-         .replace(/'/g, "&#039;"); //
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
 }
 
-function highlightKeywordsInHtml(htmlLine) { //
+function highlightKeywordsInHtml(htmlLine) {
     const commandableKeywordRegex = /\b(look|examine|use|take|go|inventory|help|status|search|talk|ask|open|north|south|east|west|up|down|console|alert|datapad|keycard|terminal|report|engine|anomaly|power|system|filter|recycle|waste|energy|flora|fauna|reactor|ai core|warden|gaia|terra-3)\b(?![^<]*>|[^<>]*<\/span>)/gi; //
-    return htmlLine.replace(commandableKeywordRegex, (match) => `<span class="commandable-keyword">${match}</span>`); //
+    return htmlLine.replace(commandableKeywordRegex, (match) => `<span class="commandable-keyword">${match}</span>`);
 }
 
-async function typeText(text, isCommandEcho = false, type = 'normal') { //
-    if (!storyOutput) return; //
-    const p = document.createElement('p'); //
-    p.classList.add('story-text-line'); //
-    if (isCommandEcho) p.classList.add('command-echo'); //
-    if (type === 'system-message') p.classList.add('system-message'); //
-    if (type === 'error-message') p.classList.add('error-message'); //
+async function typeText(text, isCommandEcho = false, type = 'normal') {
+    if (!storyOutput) return;
+    const p = document.createElement('p');
+    p.classList.add('story-text-line');
+    if (isCommandEcho) p.classList.add('command-echo');
+    if (type === 'system-message') p.classList.add('system-message');
+    if (type === 'error-message') p.classList.add('error-message');
 
-    storyOutput.appendChild(p); //
-    let processedText = escapeHtml(text); //
-    if (!isCommandEcho && type === 'normal') { //
-        processedText = highlightKeywordsInHtml(processedText); //
+    storyOutput.appendChild(p);
+    let processedText = escapeHtml(text);
+    if (!isCommandEcho && type === 'normal') {
+        processedText = highlightKeywordsInHtml(processedText);
     }
     
-    p.innerHTML = '';  //
-    for (let i = 0; i < processedText.length; i++) { //
-        if (processedText[i] === '<') {  //
-            const tagEnd = processedText.indexOf('>', i); //
-            if (tagEnd !== -1) { //
-                p.innerHTML += processedText.substring(i, tagEnd + 1); //
-                i = tagEnd; //
-            } else { //
-                p.innerHTML += processedText[i];  //
+    p.innerHTML = ''; 
+    for (let i = 0; i < processedText.length; i++) {
+        if (processedText[i] === '<') { 
+            const tagEnd = processedText.indexOf('>', i);
+            if (tagEnd !== -1) {
+                p.innerHTML += processedText.substring(i, tagEnd + 1);
+                i = tagEnd;
+            } else {
+                p.innerHTML += processedText[i];
             }
         } else { //
-            p.innerHTML += processedText[i]; //
+            p.innerHTML += processedText[i];
         }
-        storyOutput.scrollTop = storyOutput.scrollHeight; //
-        if (TYPING_SPEED > 0 && !isCommandEcho && type !== 'system-message' && type !== 'error-message') { //
-            await new Promise(resolve => setTimeout(resolve, TYPING_SPEED)); //
+        storyOutput.scrollTop = storyOutput.scrollHeight;
+        if (TYPING_SPEED > 0 && !isCommandEcho && type !== 'system-message' && type !== 'error-message') {
+            await new Promise(resolve => setTimeout(resolve, TYPING_SPEED));
         }
     }
-    p.innerHTML = processedText;  //
-    storyOutput.scrollTop = storyOutput.scrollHeight; //
+    p.innerHTML = processedText;
+    storyOutput.scrollTop = storyOutput.scrollHeight;
 }
 
 function updateStatusDisplay() { //
-    const nameToDisplay = gameState.currentUser ? (gameState.currentUser.email.split('@')[0] || "Warden") : (gameState.playerName || "Warden (Guest)"); //
-    if (playerNameDisplay) playerNameDisplay.textContent = nameToDisplay; //
-    if (sectorStabilityDisplay) sectorStabilityDisplay.textContent = `${gameState.sectorStability}%`; //
-    if (aiSyncDisplay) aiSyncDisplay.textContent = `${gameState.aiSync}%`; //
+    const nameToDisplay = gameState.currentUser ? (gameState.currentUser.email.split('@')[0] || "Warden") : (gameState.playerName || "Warden (Guest)");
+    if (playerNameDisplay) playerNameDisplay.textContent = nameToDisplay;
+    if (sectorStabilityDisplay) sectorStabilityDisplay.textContent = `${gameState.sectorStability}%`;
+    if (aiSyncDisplay) aiSyncDisplay.textContent = `${gameState.aiSync}%`;
 
     if (inventoryDisplay) { //
         inventoryDisplay.innerHTML = ''; //
