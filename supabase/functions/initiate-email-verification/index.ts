@@ -6,8 +6,7 @@ console.log("DEBUG: initiate-email-verification function starting...");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-// Ensure this is a sending address authorized with Resend (e.g., noreply@yourdomain.com)
-const VERIFICATION_FROM_EMAIL = Deno.env.get("VERIFICATION_FROM_EMAIL") || "verification@injoque.dev"; // Changed from WEEKLY_REPORT_FROM_EMAIL
+const VERIFICATION_FROM_EMAIL = Deno.env.get("VERIFICATION_FROM_EMAIL") || "verification@injoque.dev";
 const APP_BASE_URL = Deno.env.get("APP_BASE_URL") || "https://injoque.dev";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY || !VERIFICATION_FROM_EMAIL) {
@@ -18,7 +17,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY || !VERIFICAT
 const supabaseAdmin: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://injoque.dev", // Restrict in production
+  "Access-Control-Allow-Origin": "https://injoque.dev",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
@@ -38,9 +37,9 @@ serve(async (req: Request) => {
       });
     }
 
-    const userName = email.split('@')[0] || 'Warden'; // Extract username or default
+    const userName = email.split('@')[0] || 'Warden';
     const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Token valid for 24 hours
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // Token valid for 10 minutes
 
     // Store the verification token, associated user, and expiry
     const { error: dbError } = await supabaseAdmin
