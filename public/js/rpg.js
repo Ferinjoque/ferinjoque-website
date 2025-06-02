@@ -397,32 +397,29 @@ async function handleRegistration(event) {
     registerMessage.textContent = 'Registering...';
     registerMessage.className = 'auth-message';
 
-    // Step 1: Sign up the user with Supabase Auth
+    // SET FLAG before calling signUp
+    sessionStorage.setItem('isRegistering', 'true');
+
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            data: { // This is user_metadata
+            data: {
                 username: email.substring(0, email.indexOf('@')) || 'Warden',
             }
-            // NOTE: We are NOT using emailRedirectTo here, as we handle the email flow manually.
         }
     });
 
     if (signUpError) {
+        sessionStorage.removeItem('isRegistering'); // Clear flag on error too
         registerMessage.textContent = `Registration failed: ${signUpError.message}`;
         registerMessage.classList.add('error');
         return;
     }
 
-    // If signUpData.user exists, the user was created in Supabase.
-    // We will now initiate our custom email verification.
-    // We will IGNORE signUpData.session here to prevent auto-login.
     if (signUpData.user) {
         console.log('User registered in Supabase:', signUpData.user.id, signUpData.user.email);
         
-        // Assume "Confirm email" in Supabase dashboard is OFF.
-        // Proceed to send our custom verification email.
         registerMessage.textContent = 'Registration successful! Sending verification email...';
         registerMessage.className = 'auth-message success';
 
@@ -432,30 +429,27 @@ async function handleRegistration(event) {
             });
 
             if (verificationError) {
+                // Flag will be cleared by onAuthStateChange or next load if error here
                 console.error("Error calling initiate-email-verification:", verificationError);
-                // User created, but custom email failed.
                 registerMessage.textContent = `Registration complete, but could not send verification email: ${verificationError.message}. Please try to login or contact support.`;
                 registerMessage.classList.remove('success');
                 registerMessage.classList.add('error');
-                // Do NOT log in. Show login form so they can try later.
-                toggleAuthForms(true);
             } else {
                 registerMessage.textContent = 'Registration successful! Please check your email to verify your account before logging in.';
                 registerMessage.classList.add('success');
-                // Do NOT log in. Show login form.
-                toggleAuthForms(true);
             }
         } catch (invokeError) {
+            // Flag will be cleared by onAuthStateChange or next load if error here
             console.error("Critical error invoking initiate-email-verification:", invokeError);
             registerMessage.textContent = `Registration complete, but a critical error occurred while sending the verification email. Please contact support. (Code: INV_FAIL)`;
             registerMessage.classList.remove('success');
             registerMessage.classList.add('error');
-            // Do NOT log in.
-            toggleAuthForms(true);
         }
-
+        // UI should now show the message and allow user to go to login or wait for onAuthStateChange to handle UI.
+        // We don't clear the 'isRegistering' flag here; onAuthStateChange will do it.
+        toggleAuthForms(true); // Switch to login form view
     } else {
-        // This case should be rare if there was no signUpError but also no user.
+        sessionStorage.removeItem('isRegistering'); // Clear flag if no user data
         registerMessage.textContent = 'Registration process did not complete as expected. Please try again.';
         registerMessage.classList.add('error');
     }
@@ -807,45 +801,70 @@ async function initializeApp() { // Make initializeApp async
     // THEN, handle potential email verification token from URL
     await handleEmailVerificationOnLoad();
 
-    supabase.auth.onAuthStateChange(async (event, session) => { // Make callback async //
-        console.log('Auth state changed:', event, session); //
-        const currentUserId = gameState.currentUser ? gameState.currentUser.id : null; //
-        const newUserId = session && session.user ? session.user.id : null; //
 
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') { //
-            gameState.currentUser = null; //
-            if(gameUiContainer && gameUiContainer.style.display !== 'none') { //
-                if(storyOutput) storyOutput.innerHTML = '<p class="system-message">You have been logged out or your session has ended. Come back soon!</p>'; //
-                if(playerInput) playerInput.disabled = true; //
-                if(submitCommandButton) submitCommandButton.disabled = true; //
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        const currentUserId = gameState.currentUser ? gameState.currentUser.id : null;
+        const newUserId = session && session.user ? session.user.id : null;
+    
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            sessionStorage.removeItem('isRegistering'); // Clear flag on sign out
+            gameState.currentUser = null;
+            if (gameUiContainer && gameUiContainer.style.display !== 'none') {
+                if (storyOutput) storyOutput.innerHTML = '<p class="system-message">You have been logged out or your session has ended. Come back soon!</p>';
+                if (playerInput) playerInput.disabled = true;
+                if (submitCommandButton) submitCommandButton.disabled = true;
             }
-            resetGameState(); //
-            showAuthUI(); //
-        } else if (event === 'SIGNED_IN') { //
-            if (session && session.user) { //
-                if (currentUserId !== newUserId || !gameState.currentUser ) { //
+            resetGameState();
+            showAuthUI();
+        } else if (event === 'SIGNED_IN') {
+            const isRegistering = sessionStorage.getItem('isRegistering') === 'true';
+    
+            if (isRegistering) {
+                sessionStorage.removeItem('isRegistering'); // Clear the flag
+                console.log('Auth: SIGNED_IN event after registration. Suppressing auto-login. User needs to verify email.');
+                
+                // Ensure the Auth UI is visible and login form is active.
+                // The message from handleRegistration should still be visible.
+                if (authUiContainer.style.display === 'none') {
+                    showAuthUI();
+                }
+                toggleAuthForms(true); // Ensure login form is shown
+    
+                // Update message if it wasn't the final "check your email" one
+                if (loginMessage && (!registerMessage.textContent.includes("Please check your email") && !loginMessage.textContent.includes("Please check your email"))) {
+                     loginMessage.textContent = 'Registration complete. Please check your email to verify your account, then log in.';
+                     loginMessage.className = 'auth-message info'; // Use a neutral or info class
+                }
+    
+            } else if (session && session.user) {
+                // This is a normal login or session restoration
+                console.log('Auth: SIGNED_IN event for normal login or session restoration.');
+                if (currentUserId !== newUserId || !gameState.currentUser) {
                     await setupUserSession(session.user, session);
-                } else { 
-                    gameState.currentUser = { ...session.user, token: session.access_token }; //
-                    updateTopUserStatus(); //
+                } else {
+                    // User might already be current, just update token/status
+                    gameState.currentUser = { ...session.user, token: session.access_token };
+                    updateTopUserStatus();
                 }
             }
-        } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') { //
-             if (session && session.user ) { //
-                console.log("Session refreshed or user updated."); //
-                gameState.currentUser = { ...session.user, token: session.access_token }; //
-                updateTopUserStatus(); //
+        } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+            sessionStorage.removeItem('isRegistering'); // Clear flag on other events too just in case
+            if (session && session.user) {
+                console.log("Session refreshed or user updated.");
+                gameState.currentUser = { ...session.user, token: session.access_token };
+                updateTopUserStatus();
                 if (gameUiContainer && gameUiContainer.style.display === 'none' && authUiContainer && authUiContainer.style.display !== 'none' && gameState.currentUser.email_confirmed_at) {
-                   showGameUI(); //
-                   if (!gameState.isAwaitingAI && gameState.turnHistory.length === 0) { 
-                       await startGameLogic();
-                   }
+                    showGameUI();
+                    if (!gameState.isAwaitingAI && gameState.turnHistory.length === 0) {
+                        await startGameLogic();
+                    }
                 }
-            } else if (!session && currentUserId) { //
-                console.log("Session became null after token refresh/update, treating as sign out."); //
-                gameState.currentUser = null; //
-                resetGameState(); //
-                showAuthUI(); //
+            } else if (!session && currentUserId) {
+                console.log("Session became null after token refresh/update, treating as sign out.");
+                gameState.currentUser = null;
+                resetGameState();
+                showAuthUI();
             }
         }
     });
