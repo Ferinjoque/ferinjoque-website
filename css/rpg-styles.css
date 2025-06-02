@@ -39,68 +39,54 @@ body.rpg-body {
     letter-spacing: 0.5px;
 }
 
-/* Main navigation bar in the RPG header */
 .rpg-header nav {
     display: flex;
     align-items: center;
-    /* You might not need justify-content: space-between; if auto margins handle spacing */
 }
 
-/* Game Title Container - takes up available space in the middle */
+.rpg-header nav .logo {
+    flex-shrink: 0;
+}
+
 .rpg-header nav .game-title-container {
-    flex-grow: 1; /* Allows it to expand */
-    text-align: center; /* Keeps the title text centered within this container */
+    flex-grow: 1;
+    text-align: center;
 }
 
-/* Wrapper for user status and theme toggle to push them to the right */
 .user-controls-wrapper {
     display: flex;
     align-items: center;
     margin-left: auto;
     flex-shrink: 0;
-    min-width: 280px; /* ADJUST THIS VALUE - It should be wide enough to comfortably fit
-                          the "Logged in as: [typical_email_preview] Logout" + theme toggle + margins.
-                          Measure it when a user IS logged in and it looks good. */
-    justify-content: flex-end; /* Aligns its children (user-status-area & theme-toggle) to its right edge */
+    min-width: 280px;
+    justify-content: flex-end;
 }
 
-/* User Status Area - contains "Logged in as", email, and logout button */
 #user-status-area {
     display: flex;
     align-items: center;
-    /* You might not need min/max-width here if the parent (.user-controls-wrapper) has a fixed min-width
-       and the email display truncates properly. Or keep them for safety. */
-    /* min-width: 200px; */
-    /* max-width: 280px; */
 }
 
-
-/* Specifically targets the "Logged in as: " text part */
-#user-status-area > span:first-of-type { /* More specific than just span:first-child if structure changes slightly */
-    white-space: nowrap; /* Keeps "Logged in as:" on one line */
-    margin-right: 0.25em; /* Small space after the text */
+#user-status-area > span:first-of-type {
+    white-space: nowrap;
+    margin-right: 0.25em;
 }
 
-/* The user's email display */
 #user-email-display {
-    white-space: nowrap;         /* Prevent email from wrapping */
-    overflow: hidden;            /* Hide the part of the email that overflows */
-    text-overflow: ellipsis;     /* Show "..." for hidden overflowed text */
-    max-width: 120px;            /* CRITICAL: Adjust this value. It's the max width for the email string itself */
-    display: inline-block;       /* Necessary for text-overflow and max-width to work as expected */
-    vertical-align: middle;   /* Better vertical alignment with surrounding text/button */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    display: inline-block;
+    vertical-align: middle;
 }
 
-/* Logout button */
 #logout-button {
-    flex-shrink: 0; /* Ensures the button itself doesn't shrink */
-    /* Inline style for margin-left: 10px is fine */
+    flex-shrink: 0;
 }
 
-/* Theme toggle button */
 .theme-toggle {
-    flex-shrink: 0; /* Ensures the theme toggle button doesn't shrink */
-    /* Inline style for margin-left: 1rem is fine for spacing from user-status-area */
+    flex-shrink: 0;
 }
 
 .rpg-main {
