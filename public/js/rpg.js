@@ -528,40 +528,36 @@ function playAsGuest() { //
 
 async function setupUserSession(user, session) {
     console.log('Setting up user session for:', user.email);
-    // The 'user' object provided by Supabase auth events (like SIGNED_IN)
-    // should contain 'email_confirmed_at'. This field is populated when
-    // you set `{ email_confirm: true }` using the admin API in your
-    // 'complete-email-verification' function.
+    // ADD THIS LINE FOR DETAILED DEBUGGING:
+    console.log('User object received in setupUserSession:', JSON.stringify(user, null, 2));
+    // ALSO LOG THE SPECIFIC PROPERTY:
+    console.log('user.email_confirmed_at value:', user.email_confirmed_at);
 
     // Check if the email is confirmed
-    if (!user.email_confirmed_at) {
-        console.warn(`User ${user.email} attempted to log in, but their email is not confirmed. Signing out.`);
+    // This relies on your 'complete-email-verification' function setting 'email_confirm: true'
+    // which Supabase translates to a timestamp in 'email_confirmed_at'.
+    if (!user.email_confirmed_at) { // This means email_confirmed_at is null, undefined, or an empty string
+        console.warn(`User ${user.email} logged in BUT email is not confirmed (email_confirmed_at: ${user.email_confirmed_at}). Signing out.`);
         
-        // Display a message to the user on the login form
-        if (loginMessage) { // loginMessage is the <p> tag for login feedback
+        if (loginMessage) {
             loginMessage.textContent = 'Your email address is not verified. Please check your inbox for the verification link, then try logging in again.';
-            loginMessage.className = 'auth-message error'; // Style as an error
+            loginMessage.className = 'auth-message error';
         } else {
-            // Fallback if loginMessage isn't available, though it should be
             alert('Your email address is not verified. Please check your inbox for the verification link, then try logging in again.');
         }
         
-        // Programmatically sign the user out
-        await supabase.auth.signOut();
-        
-        // The onAuthStateChange handler will automatically catch the SIGNED_OUT event
-        // and call showAuthUI() and resetGameState(). So, no need to call them here.
-        return; // Stop further execution of setupUserSession
+        await supabase.auth.signOut(); // This will trigger onAuthStateChange with 'SIGNED_OUT'
+        return; // Stop further execution
     }
 
-    // Email is confirmed, proceed with normal session setup
-    console.log(`User ${user.email} is confirmed. Proceeding to game.`);
+    // Email is confirmed, proceed
+    console.log(`User ${user.email} is confirmed with email_confirmed_at: ${user.email_confirmed_at}. Proceeding to game.`);
     gameState.currentUser = { ...user, token: session.access_token };
     
-    resetGameState(); // Reset game state for the potentially new user
+    resetGameState();
     updateTopUserStatus();
-    showGameUI(); // Transition to the game interface
-    await startGameLogic(); // Start the game
+    showGameUI();
+    await startGameLogic();
 }
 
 function showAuthUI() { //
