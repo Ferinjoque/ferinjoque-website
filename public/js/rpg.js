@@ -27,6 +27,10 @@ const closeHelpButton = document.getElementById('close-help-modal');
 const aiChoicesPanel = document.getElementById('ai-choices-panel');
 const aiLoadingIndicator = document.getElementById('ai-loading-indicator');
 let processingMessageElement = null;
+const loginPasswordInput = document.getElementById('login-password');
+const toggleLoginPasswordIcon = document.getElementById('toggle-login-password');
+const registerPasswordInput = document.getElementById('register-password');
+const toggleRegisterPasswordIcon = document.getElementById('toggle-register-password');
 
 // --- Auth UI DOM Elements ---
 const authUiContainer = document.getElementById('auth-ui-container');
@@ -811,6 +815,23 @@ async function initializeApp() { // Make initializeApp async
         });
         playerInput.dataset.listenerAttached = "true"; //
     }
+
+    const setupPasswordToggle = (inputField, toggleIcon) => {
+        if (inputField && toggleIcon) {
+            // Check if listener is already attached using your addListenerOnce logic or a similar flag
+            if (!toggleIcon.dataset.passwordToggleListenerAttached) { // Using a specific flag for this
+                toggleIcon.addEventListener('click', () => {
+                    const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
+                    inputField.setAttribute('type', type);
+                    toggleIcon.textContent = type === 'password' ? 'visibility_off' : 'visibility';
+                });
+                toggleIcon.dataset.passwordToggleListenerAttached = "true"; // Mark as attached
+            }
+        }
+    };
+
+    setupPasswordToggle(loginPasswordInput, toggleLoginPasswordIcon);
+    setupPasswordToggle(registerPasswordInput, toggleRegisterPasswordIcon);
 
     // Check for existing session first
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
