@@ -529,64 +529,69 @@ function playAsGuest() { //
 async function setupUserSession(user, session) {
     console.log('Setting up user session for:', user.email);
     console.log('User object from auth system:', JSON.stringify(user, null, 2));
-    // We know user.email_confirmed_at from Supabase auth is set prematurely,
-    // so we will rely on our custom check.
 
     // Fetch custom verification status from 'email_verifications' table
     const { data: verificationStatusEntry, error: fetchStatusError } = await supabase
         .from('email_verifications')
         .select('is_verified')
-        .eq('user_id', user.id) // Match the authenticated user's ID
-        .eq('is_verified', true) // Specifically look for a record marked as true
-        .limit(1) // We only need to know if at least one verified record exists
-        .single(); // Expects one or zero rows. `maybeSingle()` is also an option.
+        .eq('user_id', user.id)
+        .eq('is_verified', true)
+        // .limit(1) // .maybeSingle() implies limit 1 for the result processing
+        .maybeSingle(); // <--- CHANGE .single() to .maybeSingle()
 
-    if (fetchStatusError && fetchStatusError.code !== 'PGRST116') { // PGRST116: " esattamente una riga viola la restrizione" (no rows/more than one row when single() is used and not found)
-                                                                  // We want to treat "no rows found" as "not verified".
+    // If fetchStatusError occurs, it's a genuine DB error, not "no rows found"
+    if (fetchStatusError) {
         console.error('Error fetching custom email verification status:', fetchStatusError);
         if (loginMessage) {
             loginMessage.textContent = 'Could not check email verification status. Please try again.';
             loginMessage.className = 'auth-message error';
+            loginMessage.dataset.preserveOnShowAuth = "true"; // Preserve this error message
         }
         await supabase.auth.signOut();
         return;
     }
 
-    // If no record was found where is_verified is true for this user_id,
-    // or if verificationStatusEntry is null (because .single() found no matching verified row)
-    if (!verificationStatusEntry || !verificationStatusEntry.is_verified) {
-        console.warn(`User ${user.email} logged in, BUT custom email verification (is_verified flag in email_verifications table) is NOT complete. Signing out.`);
-        
+    // If no record was found (verificationStatusEntry is null) or is_verified is false
+    if (!verificationStatusEntry || !verificationStatusEntry.is_verified) { // Check verificationStatusEntry first
+        console.warn(`User ${user.email} logged in, BUT custom email verification is NOT complete. Signing out.`);
         if (loginMessage) {
             loginMessage.textContent = 'Your email address is not verified. Please check your inbox for the verification link, then try logging in again.';
             loginMessage.className = 'auth-message error';
+            loginMessage.dataset.preserveOnShowAuth = "true"; // Preserve this message
         } else {
+            // Fallback, though loginMessage should exist
             alert('Your email address is not verified. Please check your inbox for the verification link, then try logging in again.');
         }
-        
         await supabase.auth.signOut();
-        return; // Stop further execution
+        return;
     }
 
     // Custom email verification is complete
-    console.log(`User ${user.email} custom email is verified (found is_verified=true in email_verifications). Proceeding to game.`);
+    console.log(`User ${user.email} custom email is verified. Proceeding to game.`);
     gameState.currentUser = { ...user, token: session.access_token };
-    
+
     resetGameState();
     updateTopUserStatus();
     showGameUI();
     await startGameLogic();
 }
 
-function showAuthUI() { //
-    if (authUiContainer) authUiContainer.style.display = 'flex'; //
-    if (gameUiContainer) gameUiContainer.style.display = 'none'; //
-    if (userStatusArea) userStatusArea.style.display = 'none'; //
-    if (loginForm) loginForm.reset(); //
-    if (registerForm) registerForm.reset(); //
-    if (loginMessage) loginMessage.textContent = ''; //
-    if (registerMessage) registerMessage.textContent = ''; //
-    toggleAuthForms(true);  //
+function showAuthUI() {
+    if (authUiContainer) authUiContainer.style.display = 'flex';
+    if (gameUiContainer) gameUiContainer.style.display = 'none';
+    if (userStatusArea) userStatusArea.style.display = 'none';
+    if (loginForm) loginForm.reset();
+    if (registerForm) registerForm.reset();
+
+    // Check if loginMessage should be preserved
+    if (loginMessage && loginMessage.dataset.preserveOnShowAuth === "true") {
+        delete loginMessage.dataset.preserveOnShowAuth; // Clear the flag after checking
+    } else if (loginMessage) {
+        loginMessage.textContent = ''; // Default behavior: clear it
+    }
+
+    if (registerMessage) registerMessage.textContent = '';
+    toggleAuthForms(true); // Default to showing login form
 }
 
 function showGameUI() { //
@@ -673,93 +678,71 @@ async function handleEmailVerificationOnLoad() {
     const type = urlParams.get('type');
 
     if (type === 'email_verification' && verificationToken) {
-        console.log('DEBUG: Email verification token found in URL:', verificationToken);
+        console.log('Handling email verification token from URL:', verificationToken);
 
-        const authContainer = document.getElementById('auth-ui-container');
-        const gameContainer = document.getElementById('game-ui-container');
-        let messageDisplay = document.getElementById('verification-message-display'); // Prefer a dedicated one
-        if (!messageDisplay) {
-            messageDisplay = document.getElementById('login-message') || document.getElementById('register-message');
+        // Ensure Auth UI is visible, Game UI is hidden, clear any game state
+        if (authUiContainer) authUiContainer.style.display = 'flex';
+        if (gameUiContainer) gameUiContainer.style.display = 'none';
+        if (userStatusArea) userStatusArea.style.display = 'none'; // Hide user status too
+        if (gameState.currentUser) { // If a user was somehow logged in, log them out.
+             await supabase.auth.signOut(); // This will also trigger onAuthStateChange to reset further UI.
+        } else {
+            resetGameState(); // Ensure game state is clean
+            showAuthUI();     // Ensure auth UI is shown and messages are cleared initially by it
         }
+        
+        // Target loginMessage specifically for feedback
+        const messageDisplay = document.getElementById('login-message');
 
-        if (authContainer) authContainer.style.display = 'flex';
-        if (gameContainer) gameContainer.style.display = 'none';
+        // Hide all auth forms and toggles initially
+        if (loginForm) loginForm.style.display = 'none';
+        if (registerForm) registerForm.style.display = 'none';
+        if (playGuestButton && playGuestButton.parentElement) playGuestButton.parentElement.style.display = 'none';
+        document.querySelectorAll('.auth-toggle').forEach(el => el.style.display = 'none');
 
         if (messageDisplay) {
             messageDisplay.textContent = 'Verifying your email, please wait...';
-            messageDisplay.className = 'auth-message';
-            if (loginForm) loginForm.style.display = 'none';
-            if (registerForm) registerForm.style.display = 'none';
-            if (playGuestButton && playGuestButton.parentElement) playGuestButton.parentElement.style.display = 'none';
-            const authToggleElements = document.querySelectorAll('.auth-toggle');
-            authToggleElements.forEach(el => el.style.display = 'none');
-
-
-        } else {
-            console.warn("DEBUG: No suitable message display found for verification status.");
+            messageDisplay.className = 'auth-message info'; // Use a neutral 'info' class
         }
 
         try {
+            // Call your Supabase Edge Function
             const { data, error: invokeFnError } = await supabase.functions.invoke('complete-email-verification', {
                 body: { token: verificationToken }
             });
 
-            if (invokeFnError) {
-                console.error("Email verification invocation error:", invokeFnError);
-                if (messageDisplay) {
-                    messageDisplay.textContent = `Verification failed: ${invokeFnError.message || 'Could not reach verification service.'}`;
-                    messageDisplay.classList.add('error');
-                }
-            } else if (data && data.error) {
-                console.error("Email verification failed (from function data):", data.error);
-                if (messageDisplay) {
-                    messageDisplay.textContent = `Verification failed: ${data.error}`;
-                    messageDisplay.classList.add('error');
-                }
+            if (invokeFnError) { // Network error or function invocation itself failed
+                throw new Error(invokeFnError.message || 'Could not reach verification service.');
+            } else if (data && data.error) { // Function executed but returned an error in its JSON response
+                throw new Error(data.error);
             } else if (data && data.success) {
                 if (messageDisplay) {
                     messageDisplay.textContent = 'Email successfully verified! You can now log in.';
-                    messageDisplay.classList.add('success');
+                    messageDisplay.className = 'auth-message success';
                 }
-                toggleAuthForms(true); // Show login form
-                if (loginForm) loginForm.style.display = 'block'; // Ensure login form is visible
             } else {
-                console.error("Unexpected response from complete-email-verification:", data);
-                if (messageDisplay) {
-                    messageDisplay.textContent = 'Verification process encountered an issue. Please try logging in or contact support.';
-                    messageDisplay.classList.add('error');
-                }
+                // Unexpected response structure from the function
+                throw new Error('Verification process encountered an unexpected issue. Please try again.');
             }
         } catch (e) {
-            console.error("Critical error during email verification handling:", e);
+            console.error("Error during client-side email verification handling:", e);
             if (messageDisplay) {
-                messageDisplay.textContent = 'A critical error occurred during email verification. Please try again later.';
-                messageDisplay.classList.add('error');
+                messageDisplay.textContent = `Verification failed: ${e.message}`;
+                messageDisplay.className = 'auth-message error';
             }
         } finally {
-            if (window.history.replaceState) {
-                const cleanURL = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.hash;
-                window.history.replaceState({ path: cleanURL }, '', cleanURL);
+            // Always show the login form and its toggle after attempting verification
+            if (loginForm) loginForm.style.display = 'block';
+            if (showLoginLink?.parentElement && showRegisterLink?.parentElement) { // Ensure toggle links are managed
+                 showRegisterLink.parentElement.style.display = 'block'; // Show "New here? Create account"
+                 showLoginLink.parentElement.style.display = 'none';    // Hide "Already have an account? Login"
             }
-            // Restore visibility of form toggles and guest play button if they were hidden
-            // Only if a message was displayed and the message is not a success/error message (or after some time)
-            if (messageDisplay) {
-                 setTimeout(() => {
-                    if (loginForm && (messageDisplay.classList.contains('success') || messageDisplay.classList.contains('error'))) {
-                        // If success or error, login form should be visible (or register if preferred)
-                        loginForm.style.display = 'block';
-                        toggleAuthForms(true); // default to showing login form with its toggle
-                    } else if (loginForm) {
-                        // If message was neutral and cleared, show default auth screen
-                        loginForm.style.display = 'block';
-                        toggleAuthForms(true);
-                    }
-                    if(playGuestButton && playGuestButton.parentElement) playGuestButton.parentElement.style.display = 'block';
-                    const authToggleElements = document.querySelectorAll('.auth-toggle'); // Re-query in case it was hidden
-                    authToggleElements.forEach(el => el.style.display = 'block'); // Make sure they are visible again
-                    toggleAuthForms(true); // Ensure the correct one based on state (login is default here)
+            if (playGuestButton && playGuestButton.parentElement) playGuestButton.parentElement.style.display = 'block'; // Show guest play
 
-                }, messageDisplay.classList.contains('success') || messageDisplay.classList.contains('error') ? 5000 : 1000); // Longer delay for error/success
+            // Clean the URL parameters
+            if (window.history.replaceState) {
+                const cleanURL = window.location.protocol + "//" + window.location.host + window.location.pathname; // Keep /rpg.html
+                window.history.replaceState({ path: cleanURL }, '', cleanURL);
             }
         }
     }
