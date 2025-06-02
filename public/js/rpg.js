@@ -480,7 +480,7 @@ async function handleLogin(event) {
         // loginMessage will be updated by setupUserSession if email is not confirmed.
         // If confirmed, game UI will show.
         console.log('Login successful with Supabase, onAuthStateChange will proceed.');
-        // Optionally clear login message here or let setupUserSession handle it
+        // Optionally clear login message here or let Session handle it
         // loginMessage.textContent = ''; 
     } else {
         // This case implies something unexpected, data.user or data.session was missing without an error
@@ -531,45 +531,44 @@ async function setupUserSession(user, session) {
     console.log('User object from auth system:', JSON.stringify(user, null, 2));
 
     // Fetch custom verification status from 'email_verifications' table
-    const { data: verificationStatusEntry, error: fetchStatusError } = await supabase
+    console.log(`Querying email_verifications for user_id: ${user.id} and is_verified: true`);
+    const { data: verifiedRecords, error: fetchStatusError } = await supabase
         .from('email_verifications')
-        .select('is_verified')
+        .select('id, user_id, email, is_verified, created_at, updated_at') // Select more fields for debugging
         .eq('user_id', user.id)
-        .eq('is_verified', true)
-        // .limit(1) // .maybeSingle() implies limit 1 for the result processing
-        .maybeSingle(); // <--- CHANGE .single() to .maybeSingle()
+        .eq('is_verified', true); // Look for any record for this user that is verified
 
-    // If fetchStatusError occurs, it's a genuine DB error, not "no rows found"
     if (fetchStatusError) {
-        console.error('Error fetching custom email verification status:', fetchStatusError);
+        console.error('Error fetching custom email verification status from email_verifications:', fetchStatusError);
         if (loginMessage) {
             loginMessage.textContent = 'Could not check email verification status. Please try again.';
             loginMessage.className = 'auth-message error';
-            loginMessage.dataset.preserveOnShowAuth = "true"; // Preserve this error message
+            loginMessage.dataset.preserveOnShowAuth = "true";
         }
         await supabase.auth.signOut();
         return;
     }
 
-    // If no record was found (verificationStatusEntry is null) or is_verified is false
-    if (!verificationStatusEntry || !verificationStatusEntry.is_verified) { // Check verificationStatusEntry first
-        console.warn(`User ${user.email} logged in, BUT custom email verification is NOT complete. Signing out.`);
+    console.log('Result from email_verifications query:', JSON.stringify(verifiedRecords, null, 2));
+
+    // Check if any verified record was found
+    if (!verifiedRecords || verifiedRecords.length === 0) {
+        console.warn(`User ${user.email} logged in, BUT custom email verification (is_verified flag in email_verifications table) is NOT complete or no verified record found. Signing out.`);
         if (loginMessage) {
-            loginMessage.textContent = 'Your email address is not verified. Please check your inbox for the verification link, then try logging in again.';
+            loginMessage.textContent = 'Your email address is not verified. Please check your inbox for the verification link, then log in again.';
             loginMessage.className = 'auth-message error';
-            loginMessage.dataset.preserveOnShowAuth = "true"; // Preserve this message
+            loginMessage.dataset.preserveOnShowAuth = "true";
         } else {
-            // Fallback, though loginMessage should exist
             alert('Your email address is not verified. Please check your inbox for the verification link, then try logging in again.');
         }
         await supabase.auth.signOut();
         return;
     }
 
-    // Custom email verification is complete
-    console.log(`User ${user.email} custom email is verified. Proceeding to game.`);
+    // Custom email verification is complete if we found at least one verified record
+    console.log(`User ${user.email} custom email is verified. Proceeding to game. Verified records found:`, verifiedRecords.length);
     gameState.currentUser = { ...user, token: session.access_token };
-
+    
     resetGameState();
     updateTopUserStatus();
     showGameUI();
