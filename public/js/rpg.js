@@ -389,7 +389,7 @@ async function handleRegistration(event) {
     if (!supabase || !registerForm || !registerMessage) return;
     const emailInput = registerForm.querySelector('#register-email');
     const passwordInput = registerForm.querySelector('#register-password');
-    if(!emailInput || !passwordInput) return;
+    if (!emailInput || !passwordInput) return;
 
     const email = emailInput.value;
     const password = passwordInput.value;
@@ -405,9 +405,7 @@ async function handleRegistration(event) {
             data: { // This is user_metadata
                 username: email.substring(0, email.indexOf('@')) || 'Warden',
             }
-            // IMPORTANT: Ensure Supabase project's "Confirm email" setting in Auth > Settings is OFF
-            // if you want this custom flow to be the *only* confirmation mechanism.
-            // If it's ON, Supabase might also send its own email.
+            // NOTE: We are NOT using emailRedirectTo here, as we handle the email flow manually.
         }
     });
 
@@ -417,57 +415,47 @@ async function handleRegistration(event) {
         return;
     }
 
+    // If signUpData.user exists, the user was created in Supabase.
+    // We will now initiate our custom email verification.
+    // We will IGNORE signUpData.session here to prevent auto-login.
     if (signUpData.user) {
-        console.log('User registered:', signUpData.user.id, signUpData.user.email);
-        // Step 2: User created, now call our custom function to send the verification email.
-        // Check if user needs confirmation (newly created user by email/password usually does if Supabase default confirmation is off and we want custom)
-        // Supabase's signUpData.user.email_confirmed_at will be null for new users needing confirmation.
-        // The condition `signUpData.user.identities && signUpData.user.identities.length > 0` is also a good indicator for email/pass users.
-        if (signUpData.user.identities && signUpData.user.identities.some(id => id.provider === 'email') && !signUpData.user.email_confirmed_at) {
-            registerMessage.textContent = 'Registration successful! Sending verification email...';
-            registerMessage.className = 'auth-message success'; // Keep it positive for now
+        console.log('User registered in Supabase:', signUpData.user.id, signUpData.user.email);
+        
+        // Assume "Confirm email" in Supabase dashboard is OFF.
+        // Proceed to send our custom verification email.
+        registerMessage.textContent = 'Registration successful! Sending verification email...';
+        registerMessage.className = 'auth-message success';
 
-            try {
-                const { error: verificationError } = await supabase.functions.invoke('initiate-email-verification', {
-                    body: { userId: signUpData.user.id, email: signUpData.user.email }
-                });
+        try {
+            const { error: verificationError } = await supabase.functions.invoke('initiate-email-verification', {
+                body: { userId: signUpData.user.id, email: signUpData.user.email }
+            });
 
-                if (verificationError) {
-                    console.error("Error calling initiate-email-verification:", verificationError);
-                    registerMessage.textContent = `Registration complete, but could not send verification email: ${verificationError.message}. Please contact support.`;
-                    registerMessage.classList.remove('success');
-                    registerMessage.classList.add('error');
-                } else {
-                    registerMessage.textContent = 'Registration successful! Please check your email to confirm your account.';
-                    registerMessage.classList.add('success'); // Ensure it's success
-                    toggleAuthForms(true); // Show login form
-                }
-            } catch (invokeError) {
-                console.error("Critical error invoking initiate-email-verification:", invokeError);
-                registerMessage.textContent = `Registration complete, but a critical error occurred sending verification. Please contact support. (Code: INV_FAIL)`;
+            if (verificationError) {
+                console.error("Error calling initiate-email-verification:", verificationError);
+                // User created, but custom email failed.
+                registerMessage.textContent = `Registration complete, but could not send verification email: ${verificationError.message}. Please try to login or contact support.`;
                 registerMessage.classList.remove('success');
                 registerMessage.classList.add('error');
-            }
-        } else if (signUpData.user.email_confirmed_at) {
-            // Email already confirmed (e.g. social login, or if confirmation was off and user somehow got confirmed)
-            registerMessage.textContent = 'Registration successful and email confirmed!';
-            registerMessage.classList.add('success');
-            // Proceed to login or auto-login if session is present
-            if (signUpData.session) {
-                await setupUserSession(signUpData.user, signUpData.session);
+                // Do NOT log in. Show login form so they can try later.
+                toggleAuthForms(true);
             } else {
-                toggleAuthForms(true); // Show login form
+                registerMessage.textContent = 'Registration successful! Please check your email to verify your account before logging in.';
+                registerMessage.classList.add('success');
+                // Do NOT log in. Show login form.
+                toggleAuthForms(true);
             }
-        } else {
-             // Fallback: User created but state is unclear regarding confirmation
-            console.warn("User created but confirmation state is unusual:", signUpData.user);
-            registerMessage.textContent = 'Registration is processing. If you don\'t receive a verification email shortly, please contact support or try logging in.';
-            registerMessage.classList.add('success'); // Or neutral
+        } catch (invokeError) {
+            console.error("Critical error invoking initiate-email-verification:", invokeError);
+            registerMessage.textContent = `Registration complete, but a critical error occurred while sending the verification email. Please contact support. (Code: INV_FAIL)`;
+            registerMessage.classList.remove('success');
+            registerMessage.classList.add('error');
+            // Do NOT log in.
             toggleAuthForms(true);
         }
 
     } else {
-        // Fallback if signUpData.user is null but no signUpError (should be rare)
+        // This case should be rare if there was no signUpError but also no user.
         registerMessage.textContent = 'Registration process did not complete as expected. Please try again.';
         registerMessage.classList.add('error');
     }
