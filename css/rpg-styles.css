@@ -42,6 +42,7 @@ body.rpg-body {
 .rpg-header nav {
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .rpg-header nav .logo {
@@ -49,8 +50,12 @@ body.rpg-body {
 }
 
 .rpg-header nav .game-title-container {
-    flex-grow: 1;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
+    width: auto;
 }
 
 .user-controls-wrapper {
@@ -58,7 +63,7 @@ body.rpg-body {
     align-items: center;
     margin-left: auto;
     flex-shrink: 0;
-    min-width: 280px;
+    width: 300px;
     justify-content: flex-end;
 }
 
@@ -76,7 +81,7 @@ body.rpg-body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 100px;
     display: inline-block;
     vertical-align: middle;
 }
