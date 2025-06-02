@@ -528,16 +528,34 @@ function playAsGuest() { //
 
 async function setupUserSession(user, session) {
     console.log('Setting up user session for:', user.email);
-    // ADD THIS LINE FOR DETAILED DEBUGGING:
-    console.log('User object received in setupUserSession:', JSON.stringify(user, null, 2));
-    // ALSO LOG THE SPECIFIC PROPERTY:
-    console.log('user.email_confirmed_at value:', user.email_confirmed_at);
+    console.log('User object from auth system:', JSON.stringify(user, null, 2));
+    // We know user.email_confirmed_at from Supabase auth is set prematurely,
+    // so we will rely on our custom check.
 
-    // Check if the email is confirmed
-    // This relies on your 'complete-email-verification' function setting 'email_confirm: true'
-    // which Supabase translates to a timestamp in 'email_confirmed_at'.
-    if (!user.email_confirmed_at) { // This means email_confirmed_at is null, undefined, or an empty string
-        console.warn(`User ${user.email} logged in BUT email is not confirmed (email_confirmed_at: ${user.email_confirmed_at}). Signing out.`);
+    // Fetch custom verification status from 'email_verifications' table
+    const { data: verificationStatusEntry, error: fetchStatusError } = await supabase
+        .from('email_verifications')
+        .select('is_verified')
+        .eq('user_id', user.id) // Match the authenticated user's ID
+        .eq('is_verified', true) // Specifically look for a record marked as true
+        .limit(1) // We only need to know if at least one verified record exists
+        .single(); // Expects one or zero rows. `maybeSingle()` is also an option.
+
+    if (fetchStatusError && fetchStatusError.code !== 'PGRST116') { // PGRST116: " esattamente una riga viola la restrizione" (no rows/more than one row when single() is used and not found)
+                                                                  // We want to treat "no rows found" as "not verified".
+        console.error('Error fetching custom email verification status:', fetchStatusError);
+        if (loginMessage) {
+            loginMessage.textContent = 'Could not check email verification status. Please try again.';
+            loginMessage.className = 'auth-message error';
+        }
+        await supabase.auth.signOut();
+        return;
+    }
+
+    // If no record was found where is_verified is true for this user_id,
+    // or if verificationStatusEntry is null (because .single() found no matching verified row)
+    if (!verificationStatusEntry || !verificationStatusEntry.is_verified) {
+        console.warn(`User ${user.email} logged in, BUT custom email verification (is_verified flag in email_verifications table) is NOT complete. Signing out.`);
         
         if (loginMessage) {
             loginMessage.textContent = 'Your email address is not verified. Please check your inbox for the verification link, then try logging in again.';
@@ -546,12 +564,12 @@ async function setupUserSession(user, session) {
             alert('Your email address is not verified. Please check your inbox for the verification link, then try logging in again.');
         }
         
-        await supabase.auth.signOut(); // This will trigger onAuthStateChange with 'SIGNED_OUT'
+        await supabase.auth.signOut();
         return; // Stop further execution
     }
 
-    // Email is confirmed, proceed
-    console.log(`User ${user.email} is confirmed with email_confirmed_at: ${user.email_confirmed_at}. Proceeding to game.`);
+    // Custom email verification is complete
+    console.log(`User ${user.email} custom email is verified (found is_verified=true in email_verifications). Proceeding to game.`);
     gameState.currentUser = { ...user, token: session.access_token };
     
     resetGameState();
