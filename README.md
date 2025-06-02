@@ -169,4 +169,3 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 * GitHub Team
 * Supabase Team
-* Bolt.new Team
