@@ -26,21 +26,6 @@ body.rpg-body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.rpg-header nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.rpg-header .logo a {
-    padding: 0.25rem 0.5rem;
-}
-
-.game-title-container {
-    text-align: center;
-    flex-grow: 1;
-}
-
 .game-title {
     font-size: 1.75rem;
     color: var(--rpg-primary-color);
@@ -52,6 +37,65 @@ body.rpg-body {
     font-size: 0.85rem;
     color: var(--color-text-muted);
     letter-spacing: 0.5px;
+}
+
+/* Main navigation bar in the RPG header */
+.rpg-header nav {
+    display: flex;
+    align-items: center;
+    /* You might not need justify-content: space-between; if auto margins handle spacing */
+}
+
+/* Game Title Container - takes up available space in the middle */
+.rpg-header nav .game-title-container {
+    flex-grow: 1; /* Allows it to expand */
+    text-align: center; /* Keeps the title text centered within this container */
+}
+
+/* Wrapper for user status and theme toggle to push them to the right */
+.user-controls-wrapper {
+    display: flex;       /* Already in your inline style, good */
+    align-items: center; /* Already in your inline style, good */
+    margin-left: auto;   /* THIS is what pushes this whole group to the right */
+    flex-shrink: 0;      /* Prevents this group from shrinking if space is tight */
+}
+
+/* User Status Area - contains "Logged in as", email, and logout button */
+#user-status-area {
+    display: flex;
+    align-items: center;
+    min-width: 200px;  /* Adjust: Minimum space it should take */
+    max-width: 280px;  /* Adjust: Maximum space before email is forced to truncate more */
+    /* justify-content: flex-end; /* Optional: if you want items inside this to align to its own right edge */
+    /* The inline styles for color and font-size are fine */
+}
+
+/* Specifically targets the "Logged in as: " text part */
+#user-status-area > span:first-of-type { /* More specific than just span:first-child if structure changes slightly */
+    white-space: nowrap; /* Keeps "Logged in as:" on one line */
+    margin-right: 0.25em; /* Small space after the text */
+}
+
+/* The user's email display */
+#user-email-display {
+    white-space: nowrap;         /* Prevent email from wrapping */
+    overflow: hidden;            /* Hide the part of the email that overflows */
+    text-overflow: ellipsis;     /* Show "..." for hidden overflowed text */
+    max-width: 120px;            /* CRITICAL: Adjust this value. It's the max width for the email string itself */
+    display: inline-block;       /* Necessary for text-overflow and max-width to work as expected */
+    vertical-align: middle;   /* Better vertical alignment with surrounding text/button */
+}
+
+/* Logout button */
+#logout-button {
+    flex-shrink: 0; /* Ensures the button itself doesn't shrink */
+    /* Inline style for margin-left: 10px is fine */
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    flex-shrink: 0; /* Ensures the theme toggle button doesn't shrink */
+    /* Inline style for margin-left: 1rem is fine for spacing from user-status-area */
 }
 
 .rpg-main {
