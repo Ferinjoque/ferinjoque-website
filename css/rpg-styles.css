@@ -54,21 +54,26 @@ body.rpg-body {
 
 /* Wrapper for user status and theme toggle to push them to the right */
 .user-controls-wrapper {
-    display: flex;       /* Already in your inline style, good */
-    align-items: center; /* Already in your inline style, good */
-    margin-left: auto;   /* THIS is what pushes this whole group to the right */
-    flex-shrink: 0;      /* Prevents this group from shrinking if space is tight */
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+    min-width: 280px; /* ADJUST THIS VALUE - It should be wide enough to comfortably fit
+                          the "Logged in as: [typical_email_preview] Logout" + theme toggle + margins.
+                          Measure it when a user IS logged in and it looks good. */
+    justify-content: flex-end; /* Aligns its children (user-status-area & theme-toggle) to its right edge */
 }
 
 /* User Status Area - contains "Logged in as", email, and logout button */
 #user-status-area {
     display: flex;
     align-items: center;
-    min-width: 200px;  /* Adjust: Minimum space it should take */
-    max-width: 280px;  /* Adjust: Maximum space before email is forced to truncate more */
-    /* justify-content: flex-end; /* Optional: if you want items inside this to align to its own right edge */
-    /* The inline styles for color and font-size are fine */
+    /* You might not need min/max-width here if the parent (.user-controls-wrapper) has a fixed min-width
+       and the email display truncates properly. Or keep them for safety. */
+    /* min-width: 200px; */
+    /* max-width: 280px; */
 }
+
 
 /* Specifically targets the "Logged in as: " text part */
 #user-status-area > span:first-of-type { /* More specific than just span:first-child if structure changes slightly */
