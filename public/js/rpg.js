@@ -456,33 +456,37 @@ async function handleRegistration(event) {
 }
 
 
-async function handleLogin(event) { //
-    event.preventDefault(); //
-    if (!supabase || !loginForm || !loginMessage) return; //
-    const emailInput = loginForm.querySelector('#login-email'); //
-    const passwordInput = loginForm.querySelector('#login-password'); //
-    if(!emailInput || !passwordInput) return; //
+async function handleLogin(event) {
+    event.preventDefault();
+    if (!supabase || !loginForm || !loginMessage) return;
+    const emailInput = loginForm.querySelector('#login-email');
+    const passwordInput = loginForm.querySelector('#login-password');
+    if (!emailInput || !passwordInput) return;
 
-    const email = emailInput.value; //
-    const password = passwordInput.value; //
-    loginMessage.textContent = 'Logging in...'; //
-    loginMessage.className = 'auth-message'; //
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    loginMessage.textContent = 'Logging in...';
+    loginMessage.className = 'auth-message'; // Neutral message while processing
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password }); //
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) { //
-        loginMessage.textContent = `Login failed: ${error.message}`; //
-        loginMessage.classList.add('error'); //
-    } else if (data.user && data.session) { //
-        loginMessage.textContent = 'Login successful!'; //
-        loginMessage.classList.add('success'); //
-        await setupUserSession(data.user, data.session); //
-    } else { //
-        loginMessage.textContent = 'Login failed. Please check your credentials or confirm your email if new.'; //
-        loginMessage.classList.add('error'); //
+    if (error) {
+        loginMessage.textContent = `Login failed: ${error.message}`;
+        loginMessage.classList.add('error');
+    } else if (data.user && data.session) {
+        // Login was successful with Supabase.
+        // onAuthStateChange will trigger and call setupUserSession,
+        // which now includes the email confirmation check.
+        // loginMessage will be updated by setupUserSession if email is not confirmed.
+        // If confirmed, game UI will show.
+        console.log('Login successful with Supabase, onAuthStateChange will proceed.');
+        // Optionally clear login message here or let setupUserSession handle it
+        // loginMessage.textContent = ''; 
+    } else {
+        // This case implies something unexpected, data.user or data.session was missing without an error
+        loginMessage.textContent = 'Login failed. Please check your credentials.';
+        loginMessage.classList.add('error');
     }
-    console.log('Login attempt data:', data); //
-    console.log('Login attempt error:', error); //
 }
 
 async function handleLogout() { //
@@ -522,14 +526,42 @@ function playAsGuest() { //
     startGameLogic();  //
 }
 
-async function setupUserSession(user, session) { //
-    console.log('Setting up user session for:', user.email); //
-    gameState.currentUser = { ...user, token: session.access_token }; //
+async function setupUserSession(user, session) {
+    console.log('Setting up user session for:', user.email);
+    // The 'user' object provided by Supabase auth events (like SIGNED_IN)
+    // should contain 'email_confirmed_at'. This field is populated when
+    // you set `{ email_confirm: true }` using the admin API in your
+    // 'complete-email-verification' function.
+
+    // Check if the email is confirmed
+    if (!user.email_confirmed_at) {
+        console.warn(`User ${user.email} attempted to log in, but their email is not confirmed. Signing out.`);
+        
+        // Display a message to the user on the login form
+        if (loginMessage) { // loginMessage is the <p> tag for login feedback
+            loginMessage.textContent = 'Your email address is not verified. Please check your inbox for the verification link, then try logging in again.';
+            loginMessage.className = 'auth-message error'; // Style as an error
+        } else {
+            // Fallback if loginMessage isn't available, though it should be
+            alert('Your email address is not verified. Please check your inbox for the verification link, then try logging in again.');
+        }
+        
+        // Programmatically sign the user out
+        await supabase.auth.signOut();
+        
+        // The onAuthStateChange handler will automatically catch the SIGNED_OUT event
+        // and call showAuthUI() and resetGameState(). So, no need to call them here.
+        return; // Stop further execution of setupUserSession
+    }
+
+    // Email is confirmed, proceed with normal session setup
+    console.log(`User ${user.email} is confirmed. Proceeding to game.`);
+    gameState.currentUser = { ...user, token: session.access_token };
     
-    resetGameState();  //
-    updateTopUserStatus(); //
-    showGameUI(); //
-    await startGameLogic(); //
+    resetGameState(); // Reset game state for the potentially new user
+    updateTopUserStatus();
+    showGameUI(); // Transition to the game interface
+    await startGameLogic(); // Start the game
 }
 
 function showAuthUI() { //
