@@ -46,10 +46,10 @@ serve(async (req: Request) => {
       .from("email_verifications")
       .insert({
         user_id: userId,
-        email: email, // Storing email for reference can be useful
+        email: email,
         token: token,
         expires_at: expiresAt.toISOString(),
-        is_verified: false // Initialize as not verified
+        is_verified: false
       });
 
     if (dbError) {
@@ -59,7 +59,6 @@ serve(async (req: Request) => {
 
     const verificationLink = `${APP_BASE_URL}/rpg.html?type=email_verification&token=${token}`;
 
-    // Cleaned HTML content (glitch animation CSS and spans removed)
     let emailHtmlBody = `
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -183,7 +182,6 @@ serve(async (req: Request) => {
 </html>
     `;
 
-    // Replace placeholders
     emailHtmlBody = emailHtmlBody.replace(/%%USER_NAME%%/g, userName);
     emailHtmlBody = emailHtmlBody.replace(/%%VERIFICATION_URL%%/g, verificationLink);
 
@@ -195,7 +193,7 @@ serve(async (req: Request) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: VERIFICATION_FROM_EMAIL, // Use the dedicated FROM address
+        from: VERIFICATION_FROM_EMAIL,
         to: [email],
         subject: "Confirm Your Email for Eco-Echoes RPG",
         html: emailHtmlBody,
