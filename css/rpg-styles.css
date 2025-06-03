@@ -84,6 +84,7 @@ body.rpg-body {
     max-width: 100px;
     display: inline-block;
     vertical-align: middle;
+    margin-left: 0.3em;
 }
 
 #logout-button {
@@ -117,6 +118,8 @@ body.rpg-body {
     overflow-y: auto;
     color: var(--rpg-text-color);
     box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
 }
 
 .story-output-panel p.story-text-line {
@@ -138,7 +141,6 @@ body.rpg-body {
 .commandable-keyword {
     color: var(--rpg-accent-color);
     font-weight: 600;
-    /* cursor: help; */
 }
 
 .choices-panel {
@@ -334,12 +336,6 @@ body.rpg-body {
     margin-bottom: 0.6rem;
     line-height: 1.6;
 }
-.modal-content li::before {
-    /* content: '»';
-    color: var(--rpg-primary-color);
-    margin-right: 0.5em; */
-}
-
 
 .modal-content strong .commandable-keyword, 
 .modal-content .commandable-keyword {
@@ -350,7 +346,6 @@ body.rpg-body {
     margin-bottom: 1rem;
     line-height: 1.6;
 }
-
 
 .close-button {
     position: absolute;
@@ -369,7 +364,6 @@ body.rpg-body {
 .close-button:hover {
     color: var(--rpg-primary-color);
 }
-
 
 @media (max-width: 768px) {
     .game-title { font-size: 1.5rem; }
@@ -436,27 +430,6 @@ body.rpg-body {
     color: white;
 }
 
-body.rpg-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-.rpg-main {
-    flex-grow: 1;
-}
-
-.story-output-panel {
-    /* max-height: 60vh; /*
-    flex-grow: 1; /* Allow it to take available space if others shrink */
-    display: flex;
-    flex-direction: column;
-}
-.story-output-panel p.story-text-line {
-    margin-bottom: 0.8em !important; 
-    line-height: 1.6;
-}
-
 .error-message {
     color: #F44336;
     font-style: italic;
@@ -511,7 +484,6 @@ body.rpg-body {
     font-weight: 600;
 }
 
-
 .auth-intro {
     color: var(--color-text-muted);
     margin-bottom: 2rem;
@@ -530,10 +502,10 @@ body.rpg-body {
     margin-bottom: 1rem;
 }
 
-
 .auth-form .form-group {
     margin-bottom: 1rem;
     text-align: left;
+    position: relative; 
 }
 
 .auth-form label {
@@ -545,7 +517,8 @@ body.rpg-body {
 }
 
 .auth-form input[type="email"],
-.auth-form input[type="password"] {
+.auth-form input[type="password"],
+.auth-form input[type="text"] {
     width: 100%;
     padding: 0.7rem 0.9rem;
     background-color: var(--rpg-input-bg);
@@ -555,54 +528,37 @@ body.rpg-body {
     font-family: var(--font-sans);
     font-size: 0.95em;
     transition: border-color var(--transition), box-shadow var(--transition);
+    padding-right: 40px !important;
 }
 
 .auth-form input[type="email"]:focus,
-.auth-form input[type="password"]:focus {
+.auth-form input[type="password"]:focus,
+.auth-form input[type="text"]:focus {
     outline: none;
     border-color: var(--rpg-primary-color);
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* RPG Auth Form Password Toggle Icon Styling */
+.password-toggle-icon {
+    position: absolute;
+    right: 12px; 
+    top: 38px;  
+    color: var(--color-text-muted);
+    cursor: pointer;
+    user-select: none; 
+    transition: color var(--transition-fast); 
+    font-size: 1.25rem; 
+}
+
+.password-toggle-icon:hover {
+    color: var(--rpg-primary-color); 
 }
 
 .auth-form .cta-button {
     width: 100%;
     margin-top: 0.5rem;
     padding: 0.75rem;
-}
-
-/* RPG Auth Form Password Toggle Icon Styling */
-
-.auth-form .form-group {
-    position: relative; /* Ensures the icon is positioned relative to this container */
-}
-
-.password-toggle-icon {
-    position: absolute;
-    right: 12px; /* Adjust for a bit more space from the edge */
-    top: 38px;   /* This value might need fine-tuning based on your label/input height. 
-                   It's set to align with where the input field typically starts after the label. */
-    /* If your label styling or input margins change, you might prefer:
-    top: 50%;
-    transform: translateY(-50%);
-    But this would vertically center it within the entire form-group height.
-    The 38px is an attempt to align it with the input field itself more directly.
-    If you adjust this, test on both login and register forms.
-    */
-    color: var(--color-text-muted);
-    cursor: pointer;
-    user-select: none; /* Prevents selecting the icon text on click */
-    transition: color var(--transition-fast); /* Use a fast transition for responsiveness */
-    font-size: 1.25rem; /* Standard Material Icon size, adjust if needed */
-}
-
-.password-toggle-icon:hover {
-    color: var(--rpg-primary-color); /* Or use var(--color-primary-light) for a lighter hover */
-}
-
-/* Add padding to the right of password inputs to make space for the icon */
-.auth-form input[type="password"],
-.auth-form input[type="text"] { /* Also apply to text type for when toggled */
-    padding-right: 40px !important; /* Increase right padding to avoid text overlapping icon */
 }
 
 .guest-play {
@@ -657,4 +613,13 @@ body.rpg-body {
     font-size: 0.8em !important;
     line-height: 1.2 !important;
     min-width: auto !important;
+}
+
+/* Wrapper for "Logged in as: [email]" text */
+.user-login-info {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    margin-right: 5px;
 }
