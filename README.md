@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Ferinjoque/ferinjoque-website)
 
-This repository contains the source code for the personal portfolio website of Fernando Injoque ([injoque.dev](https://injoque.dev)), a Software Engineering student specializing in AI, Automation, and Sustainable Finance consulting & development.
+This repository contains the source code for the personal portfolio website of Fernando Injoque ([injoque.dev](https://injoque.dev?utm_source=github)), a Software Engineering student specializing in AI, Automation, and Sustainable Finance consulting & development.
 
 The site features:
 1.  A professional portfolio showcasing projects and experience.
@@ -76,7 +76,7 @@ The site features:
 
 1.  **Clone Repository:**
     ```bash
-    git clone [https://github.com/Ferinjoque/ferinjoque-website.git](https://github.com/Ferinjoque/ferinjoque-website.git)
+    git clone https://github.com/Ferinjoque/ferinjoque-website.git
     cd ferinjoque-website
     ```
 
@@ -163,7 +163,7 @@ The site features:
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgements
 
